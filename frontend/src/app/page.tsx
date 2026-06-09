@@ -91,7 +91,7 @@ export default function Home() {
             Chóng
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Hệ thống thu thập dữ liệu việc làm lớn nhất Việt Nam, ứng dụng AI
+            Hệ thống thu thập dữ liệu việc làm, ứng dụng AI
             phân tích CV của bạn để tìm ra công việc phù hợp nhất.
           </p>
           <p className="text-sm font-medium text-muted-foreground/80 pt-2">
