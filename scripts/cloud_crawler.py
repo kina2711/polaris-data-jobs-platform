@@ -253,6 +253,7 @@ def main():
             embed = {
                 "title": job['title'],
                 "url": job['url'],
+                "description": f"🔗 **[Bấm vào đây để xem chi tiết và Ứng tuyển]({job['url']})**",
                 "color": 3447003,
                 "fields": [
                     {"name": "🏢 Công ty", "value": job['company'] or "N/A", "inline": True},
