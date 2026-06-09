@@ -1,4 +1,4 @@
-# 🦅 Crawl Job Data Pipeline (MDS 2.0)
+# 🦅 Polaris Data Jobs Pipeline
 
 <div align="center">
   <!-- Core -->
