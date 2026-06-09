@@ -1,0 +1,232 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-be-vietnam-pro);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.6);
+}
+
+:root {
+  /* Light theme - TopCV Style (Light gray bg, white cards) */
+  --background: oklch(0.97 0.005 247);
+  --foreground: oklch(0.2 0.01 253);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.01 253);
+
+  /* Primary: Amber (Cam hổ phách) */
+  --primary: oklch(0.68 0.19 45);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.96 0.005 247);
+  --secondary-foreground: oklch(0.22 0.01 253);
+
+  --muted: oklch(0.96 0.005 247);
+  --muted-foreground: oklch(0.5 0.01 253);
+
+  --border: oklch(0.92 0.005 247);
+  --input: oklch(0.92 0.005 247);
+  --ring: oklch(0.68 0.19 45);
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* Dark theme */
+  --background: oklch(0.15 0.02 250);
+  --foreground: oklch(0.95 0.01 250);
+
+  --card: oklch(0.2 0.02 250);
+  --card-foreground: oklch(0.95 0.01 250);
+
+  --primary: oklch(0.75 0.18 45);
+  --primary-foreground: oklch(0.2 0.05 45);
+
+  --secondary: oklch(0.25 0.02 250);
+  --secondary-foreground: oklch(0.95 0.01 250);
+
+  --muted: oklch(0.25 0.02 250);
+  --muted-foreground: oklch(0.65 0.01 250);
+
+  --border: oklch(0.3 0.02 250);
+  --input: oklch(0.3 0.02 250);
+  --ring: oklch(0.75 0.18 45);
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Job description HTML content styling */
+.job-description h1,
+.job-description h2,
+.job-description h3,
+.job-description h4 {
+  font-family: var(--font-be-vietnam-pro), sans-serif;
+  font-weight: 700;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  color: var(--foreground);
+}
+
+.job-description h1 {
+  font-size: 1.25rem;
+}
+.job-description h2 {
+  font-size: 1.1rem;
+}
+.job-description h3 {
+  font-size: 1rem;
+}
+
+.job-description p {
+  margin-bottom: 0.875em;
+  line-height: 1.75;
+}
+
+.job-description ul,
+.job-description ol {
+  padding-left: 1.5em;
+  margin-bottom: 0.875em;
+}
+
+.job-description ul {
+  list-style-type: disc;
+}
+.job-description ol {
+  list-style-type: decimal;
+}
+
+.job-description li {
+  margin-bottom: 0.25em;
+  line-height: 1.7;
+}
+
+.job-description strong,
+.job-description b {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.job-description a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.job-description a:hover {
+  opacity: 0.8;
+}
+
+.job-description table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1em;
+  font-size: 0.875rem;
+}
+
+.job-description th,
+.job-description td {
+  border: 1px solid var(--border);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+
+.job-description th {
+  background-color: var(--secondary);
+  font-weight: 600;
+}
+
+.job-description hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.25em 0;
+}
+
+/* Override any crawled inline styles/classes that break layout */
+.job-description * {
+  max-height: none !important;
+  overflow: visible !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  display: revert !important;
+}
+
+.job-description div,
+.job-description section {
+  display: block !important;
+}
+
+.job-description br {
+  display: inline !important;
+}
+
+/* Mobile bottom sheet animations */
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes sheet-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sheet-panel {
+  animation: sheet-slide-up 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.sheet-backdrop {
+  animation: sheet-fade-in 0.2s ease-out;
+}
+
+/* Hide scrollbar for category pills horizontal scroll */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Base TopCV-like Utilities */
+.loading-spinner {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: currentColor;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,47 @@
+services:
+  app:
+    build: .
+    container_name: ${APP_NAME}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - PORT=${APP_PORT}
+      - TZ=Asia/Ho_Chi_Minh
+    ports:
+      - '${APP_PORT}:${APP_PORT}'
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--spider',
+          '-q',
+          'http://localhost:${APP_PORT}/api/health',
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  # One-shot container chạy prisma migrate deploy cho các model jobs own
+  # (JobAlert + JobAlertDelivery). Dùng stage `builder` để có đầy đủ
+  # node_modules + schema + migrations folder. Profile `ops` để không start
+  # trong `docker compose up` bình thường.
+  # CI gọi: docker compose --profile ops run --rm migrate
+  migrate:
+    profiles: ['ops']
+    build:
+      context: .
+      target: builder
+    env_file: .env
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    command: ['npx', 'prisma', 'migrate', 'deploy']

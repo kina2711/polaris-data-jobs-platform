@@ -1,0 +1,13 @@
+-- Baseline migration: checkpoint ownership của JobAlert + JobAlertDelivery
+-- chuyển từ xomdata_academy → xomdata_jobs kể từ commit này.
+--
+-- Các bảng đã được tạo trước đó bởi migrations của academy:
+--   20260420120000_add_job_alerts        — CREATE TABLE JobAlert + JobAlertDelivery
+--   20260422130000_add_alert_schedule    — ALTER JobAlert thêm sendHour, weekday, timezone
+--
+-- Baseline này cố tình EMPTY — không tái tạo. Record sẽ được mark applied
+-- trong _prisma_migrations trên cả 3 DB (dev/stag/prod) để Prisma deploy từ
+-- repo này bỏ qua. Migrations mới cho JobAlert/JobAlertDelivery từ đây trở đi
+-- sẽ đi qua repo xomdata_jobs, không qua academy.
+
+-- (Intentionally empty)

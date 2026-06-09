@@ -1,0 +1,37 @@
+import logging
+import os
+import sys
+
+sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from datetime import datetime, timedelta
+
+from airflow.decorators import dag
+from tasks.tasks_group import itviec_pipeline
+
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO)
+
+# Define DAG
+default_args = {
+    "owner": "sonbao",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "retries": 3,
+    "retry_delay": timedelta(seconds=30),
+}
+
+
+@dag(
+    dag_id="itviec_pipeline",
+    default_args=default_args,
+    schedule=None,
+    catchup=False,
+    tags=["itviec_pipeline"],
+)
+def _itviec_pipeline():
+
+    itviec_pipeline()
+
+
+dag = _itviec_pipeline()

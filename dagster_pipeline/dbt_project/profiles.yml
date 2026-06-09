@@ -1,0 +1,12 @@
+crawl_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DAGSTER_PG_HOST', 'postgresql_db') }}"
+      user: "{{ env_var('DAGSTER_POSTGRES_USER', 'postgres') }}"
+      password: "{{ env_var('DAGSTER_POSTGRES_PASSWORD', 'postgres') }}"
+      port: 5432
+      dbname: "{{ env_var('DAGSTER_POSTGRES_DB', 'crawl_jobs_db') }}"
+      schema: public
+      threads: 4

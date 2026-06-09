@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: job_raw
+    database: postgresql
+    schema: staging
+
+    tables:
+      - name: topcv_data_job
+        description: 'Raw job data crawled from TopCV'
+
+      - name: itviec_data_job
+        description: 'Raw job data crawled from ITViec'
+
+      - name: company_logos
+        description: 'Company logos mapping table'
+
+  - name: audit_layer
+    database: postgresql
+    schema: audit
+
+    tables:
+      - name: master_job_elt_audit

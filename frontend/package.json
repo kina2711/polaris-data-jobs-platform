@@ -1,0 +1,49 @@
+{
+  "name": "crawl-job-data-pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3400",
+    "build": "next build",
+    "start": "next start -p 3400",
+    "lint": "eslint",
+    "check:drift": "node scripts/check-schema-drift.mjs"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.11.2",
+    "@prisma/client": "^6.19.3",
+    "@xenova/transformers": "^2.17.2",
+    "ioredis": "^5.10.1",
+    "lucide-react": "^0.577.0",
+    "mysql2": "^3.21.0",
+    "next": "^15.3.0",
+    "next-auth": "^5.0.0-beta.30",
+    "next-themes": "^0.4.4",
+    "nodemailer": "^7.0.13",
+    "prisma": "^6.19.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^3.8.1",
+    "sanitize-html": "^2.17.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^22",
+    "@types/nodemailer": "^8.0.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/sanitize-html": "^2.16.1",
+    "postcss": "^8",
+    "prettier": "^3.8.3",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "browserslist": [
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 111",
+    "safari >= 16.4",
+    "ios >= 16.4",
+    "not dead"
+  ]
+}

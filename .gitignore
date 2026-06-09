@@ -1,0 +1,83 @@
+# ========================
+# Python
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+
+# ========================
+# Node.js / Next.js
+# ========================
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ========================
+# Dagster Runtime
+# ========================
+dagster_project/.logs_queue/
+dagster_project/logs/
+dagster_project/storage/
+dagster_project/.nux/
+
+# ========================
+# dbt Artifacts
+# ========================
+dagster_project/dbt_project/target/
+dagster_project/dbt_project/logs/
+dagster_project/dbt_project/dbt_packages/
+
+# ========================
+# Cube.js
+# ========================
+cube_project/.cubestore/
+
+# ========================
+# Linter / Formatter Cache
+# ========================
+.ruff_cache/
+
+# ========================
+# IDE
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ========================
+# OS
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========================
+# Environment
+# ========================
+.env
+.env.*
+!.env.example
+
+# ========================
+# Docker volumes (local)
+# ========================
+postgres_data/
+minio_data/
+
+# ========================
+# Vercel & Deployment
+# ========================
+.vercel/
+.vercel

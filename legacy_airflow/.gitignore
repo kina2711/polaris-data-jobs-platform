@@ -1,0 +1,16 @@
+.env
+.venv
+.venv_api
+.project_venv
+.git
+discord_bot_job_automate.egg-info
+**/__pycache__/
+db/
+target/
+dbt_packages/
+logs/
+.user.yml
+profiles.yml
+bot/
+api/
+dbt/job_warehouse/models/gold/
