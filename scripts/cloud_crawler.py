@@ -241,10 +241,10 @@ def main():
     # 6. Discord Notification
     if DISCORD_WEBHOOK_URL:
         print("5️⃣ Gửi thông báo Discord...")
-        content = f"🎉 **crawl_job_data_Pipeline Bot**: Vừa thu thập và tính toán Vector thành công **{len(new_jobs)}** jobs mới từ TopCV."
+        content = f"🎉 **Polaris Data Jobs Bot**: Vừa thu thập và tính toán Vector thành công **{len(new_jobs)}** jobs mới từ TopCV."
         requests.post(
             DISCORD_WEBHOOK_URL,
-            json={"username": "crawl_job_data_Pipeline Bot", "content": content},
+            json={"username": "Polaris Data Jobs Bot", "content": content},
         )
 
     print("🎉 QUÁ TRÌNH HOÀN TẤT MỸ MÃN!")

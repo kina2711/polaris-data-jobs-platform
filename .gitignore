@@ -40,7 +40,7 @@ dagster_project/dbt_project/dbt_packages/
 # ========================
 # Cube.js
 # ========================
-cube_project/.cubestore/
+semantic_layer/schema/
 
 # ========================
 # Linter / Formatter Cache
