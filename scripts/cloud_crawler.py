@@ -47,7 +47,7 @@ KEYWORDS = [
 
 
 def build_session() -> cffi_requests.Session:
-    s = cffi_requests.Session(impersonate="chrome110")
+    s = cffi_requests.Session(impersonate="chrome120")
     s.headers.update(HEADERS)
     return s
 
