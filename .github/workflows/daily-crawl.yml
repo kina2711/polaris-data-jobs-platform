@@ -1,4 +1,4 @@
-name: crawl_job_data_Pipeline Daily Crawler & AI Vectorizer
+name: Polaris Data Jobs Daily Crawler & AI Vectorizer
 
 on:
   schedule:
