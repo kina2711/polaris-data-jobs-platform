@@ -17,7 +17,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
 if not DATABASE_URL:
-    print("❌ ERROR: DATABASE_URL is not set.")
+    print("ERROR: DATABASE_URL is not set.")
     sys.exit(1)
 
 # Ensure DATABASE_URL works with sqlalchemy (if starting with postgres:// change to postgresql://)
@@ -97,7 +97,7 @@ def extract_desc_blocks(soup: BeautifulSoup):
 
 
 def main():
-    print("🚀 Bắt đầu quá trình Cào dữ liệu Cloud Crawler...")
+    print("Bắt đầu quá trình Cào dữ liệu Cloud Crawler...")
     s = build_session()
     qtpl = (
         "https://www.topcv.vn/tim-viec-lam-{keyword}?type_keyword=1&page={page}&sba=1"
@@ -106,7 +106,7 @@ def main():
     job_urls = set()
 
     # 1. Crawl Search Pages
-    print("1️⃣ Crawling danh sách Job...")
+    print("Crawling danh sách Job...")
     for keyword in KEYWORDS:
         for page in range(1, pages_to_crawl + 1):
             url = qtpl.format(keyword=keyword, page=page)
@@ -122,7 +122,7 @@ def main():
                     job_urls.add(j_url)
             smart_sleep()
 
-    print(f"✅ Tìm thấy {len(job_urls)} jobs.")
+    print(f"Tìm thấy {len(job_urls)} jobs.")
 
     # 2. Setup DB Connection
     engine = create_engine(DATABASE_URL)
@@ -154,7 +154,7 @@ def main():
     new_jobs = []
 
     # 3. Crawl Details
-    print("2️⃣ Crawling Job chi tiết...")
+    print("Crawling Job chi tiết...")
     for job_url in list(job_urls)[:40]:  # Tối đa 40 job mới mỗi lần chạy
         job_id = job_url.split("/")[-1].replace(".html", "")
         if job_id in existing_ids:
@@ -202,7 +202,7 @@ def main():
         print("Trạng thái: Không có job nào mới cần thêm.")
         return
 
-    print(f"✅ Đã cào {len(new_jobs)} jobs mới. Đang nạp AI Model...")
+    print(f"Đã cào {len(new_jobs)} jobs mới. Đang nạp AI Model...")
 
     # 4. Generate Embeddings using Sentence Transformers
     try:
@@ -213,20 +213,20 @@ def main():
             f"Title: {j['title']}. Exp: {j['experience']}. Desc: {j['description']}. Req: {j['requirements']}"
             for j in new_jobs
         ]
-        print("3️⃣ Đang tính toán Vector Embeddings...")
+        print("Đang tính toán Vector Embeddings...")
         embeddings = model.encode(texts_to_embed, normalize_embeddings=True)
         for i, job in enumerate(new_jobs):
             job["embedding"] = embeddings[i].tolist()
     except Exception as e:
-        print(f"⚠️ Lỗi tạo embedding: {e}. Sẽ lưu None.")
+        print(f"Lỗi tạo embedding: {e}. Sẽ lưu None.")
         for job in new_jobs:
             job["embedding"] = None
 
     # 5. Insert to DB
-    print("4️⃣ Lưu vào Database Neon...")
+    print("Lưu vào Database Neon...")
     for job in new_jobs:
         vec_str = (
-            f"[{','.join(map(str, job['embedding']))}]" if job["embedding"] else "NULL"
+            f"'[{','.join(map(str, job['embedding']))}]'" if job["embedding"] else "NULL"
         )
         insert_sql = text(f"""
             INSERT INTO raw_jobs (id, title, company, location, salary, experience, description, requirements, tags, source, url, crawled_at, embedding)
@@ -236,18 +236,18 @@ def main():
         with engine.begin() as conn:
             conn.execute(insert_sql, {k: v for k, v in job.items() if k != "embedding"})
 
-    print("✅ Đã lưu DB xong!")
+    print("Đã lưu DB xong!")
 
     # 6. Discord Notification
     if DISCORD_WEBHOOK_URL:
-        print("5️⃣ Gửi thông báo Discord...")
-        content = f"🎉 **Polaris Data Jobs Bot**: Vừa thu thập và tính toán Vector thành công **{len(new_jobs)}** jobs mới từ TopCV."
+        print("Gửi thông báo Discord...")
+        content = f"**Polaris Data Jobs Bot**: Vừa thu thập và tính toán Vector thành công **{len(new_jobs)}** jobs mới từ TopCV."
         requests.post(
             DISCORD_WEBHOOK_URL,
             json={"username": "Polaris Data Jobs Bot", "content": content},
         )
 
-    print("🎉 QUÁ TRÌNH HOÀN TẤT MỸ MÃN!")
+    print("QUÁ TRÌNH HOÀN TẤT MỸ MÃN!")
 
 
 if __name__ == "__main__":
