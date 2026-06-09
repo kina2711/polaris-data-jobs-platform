@@ -241,11 +241,31 @@ def main():
     # 6. Discord Notification
     if DISCORD_WEBHOOK_URL:
         print("Gửi thông báo Discord...")
-        content = f"**Polaris Data Jobs Bot**: Vừa thu thập và tính toán Vector thành công **{len(new_jobs)}** jobs mới từ TopCV."
+        # Gửi tin nhắn tổng kết trước
+        summary = f"🎉 **Polaris Data Jobs Bot**: Vừa thu thập thành công **{len(new_jobs)}** jobs mới từ TopCV. Bắt đầu đẩy dữ liệu:"
         requests.post(
             DISCORD_WEBHOOK_URL,
-            json={"username": "Polaris Data Jobs Bot", "content": content},
+            json={"username": "Polaris Data Jobs Bot", "content": summary},
         )
+        
+        # Gửi chi tiết từng job
+        for job in new_jobs:
+            embed = {
+                "title": job['title'],
+                "url": job['url'],
+                "color": 3447003,
+                "fields": [
+                    {"name": "🏢 Công ty", "value": job['company'] or "N/A", "inline": True},
+                    {"name": "📍 Địa điểm", "value": job['location'] or "N/A", "inline": True},
+                    {"name": "💰 Mức lương", "value": job['salary'] or "N/A", "inline": True},
+                    {"name": "⏳ Kinh nghiệm", "value": job['experience'] or "N/A", "inline": True},
+                ]
+            }
+            requests.post(
+                DISCORD_WEBHOOK_URL,
+                json={"username": "Polaris Data Jobs Bot", "embeds": [embed]},
+            )
+            time.sleep(0.5) # Tránh bị Discord rate limit
 
     print("QUÁ TRÌNH HOÀN TẤT MỸ MÃN!")
 
