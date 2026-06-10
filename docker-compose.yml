@@ -59,7 +59,7 @@ services:
   # -------------------------
   dagster_webserver:
     build:
-      context: ./dagster_pipeline
+      context: ./data/dagster
     container_name: dagster_webserver
     entrypoint:
       - dagster-webserver
@@ -78,13 +78,13 @@ services:
       DAGSTER_PG_HOST: postgresql_db
       DAGSTER_HOME: /opt/dagster/app
     volumes:
-      - ./dagster_pipeline:/opt/dagster/app
+      - ./data/dagster:/opt/dagster/app
     depends_on:
       - postgresql_db
 
   dagster_daemon:
     build:
-      context: ./dagster_project
+      context: ./data/dagster
     container_name: dagster_daemon
     entrypoint:
       - dagster-daemon
@@ -96,7 +96,7 @@ services:
       DAGSTER_PG_HOST: postgresql_db
       DAGSTER_HOME: /opt/dagster/app
     volumes:
-      - ./dagster_pipeline:/opt/dagster/app
+      - ./data/dagster:/opt/dagster/app
     depends_on:
       - postgresql_db
 
@@ -118,7 +118,7 @@ services:
       CUBEJS_API_SECRET: ${CUBEJS_API_SECRET:-my-secret-key}
       CUBEJS_DEV_MODE: 'true'
     volumes:
-      - ./semantic_layer:/cube/conf
+      - ./data/semantic:/cube/conf
     depends_on:
       postgresql_db:
         condition: service_healthy
@@ -148,7 +148,7 @@ services:
   # -------------------------
   web:
     build:
-      context: ./frontend
+      context: ./apps/web
       dockerfile: Dockerfile
     container_name: crawl_web
     ports:

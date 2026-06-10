@@ -1,0 +1,6 @@
+2026-06-10 04:53:40 +0000 - dagster - DEBUG - __ASSET_JOB - f590c754-a796-4465-a774-c0c00c21a366 - 29972 - LOGS_CAPTURED - Capturing logs for process (pid: 29972).
+2026-06-10 04:53:40 +0000 - dagster - DEBUG - __ASSET_JOB - f590c754-a796-4465-a774-c0c00c21a366 - 29972 - public__raw_jobs - STEP_START - Started execution of step "public__raw_jobs".
+2026-06-10 04:53:40 +0000 - dagster - INFO - __ASSET_JOB - f590c754-a796-4465-a774-c0c00c21a366 - public__raw_jobs - All raw jobs parsed and inserted into Postgres. Ready for dbt.
+2026-06-10 04:53:40 +0000 - dagster - DEBUG - __ASSET_JOB - f590c754-a796-4465-a774-c0c00c21a366 - 29972 - public__raw_jobs - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+2026-06-10 04:53:40 +0000 - dagster - DEBUG - __ASSET_JOB - f590c754-a796-4465-a774-c0c00c21a366 - 29972 - public__raw_jobs - ASSET_MATERIALIZATION - Materialized value public raw_jobs.
+2026-06-10 04:53:40 +0000 - dagster - DEBUG - __ASSET_JOB - f590c754-a796-4465-a774-c0c00c21a366 - 29972 - public__raw_jobs - STEP_SUCCESS - Finished execution of step "public__raw_jobs" in 245ms.

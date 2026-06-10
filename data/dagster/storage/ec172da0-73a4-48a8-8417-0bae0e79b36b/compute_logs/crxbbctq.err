@@ -1,0 +1,6 @@
+2026-06-10 07:16:28 +0000 - dagster - DEBUG - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - 21616 - LOGS_CAPTURED - Capturing logs for process (pid: 21616).
+2026-06-10 07:16:28 +0000 - dagster - DEBUG - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - 21616 - itviec_job_details_html - STEP_START - Started execution of step "itviec_job_details_html".
+2026-06-10 07:16:32 +0000 - dagster - INFO - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - itviec_job_details_html - [ITViec] Found 0 unique jobs to crawl.
+2026-06-10 07:16:32 +0000 - dagster - DEBUG - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - 21616 - itviec_job_details_html - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+2026-06-10 07:16:32 +0000 - dagster - DEBUG - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - 21616 - itviec_job_details_html - ASSET_MATERIALIZATION - Materialized value itviec_job_details_html.
+2026-06-10 07:16:32 +0000 - dagster - DEBUG - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - 21616 - itviec_job_details_html - STEP_SUCCESS - Finished execution of step "itviec_job_details_html" in 4.38s.

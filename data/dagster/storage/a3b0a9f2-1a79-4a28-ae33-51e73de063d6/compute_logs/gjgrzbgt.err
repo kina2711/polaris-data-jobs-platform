@@ -1,0 +1,11 @@
+2026-06-09 10:38:33 +0000 - dagster - DEBUG - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - 1546 - LOGS_CAPTURED - Capturing logs for process (pid: 1546).
+2026-06-09 10:38:33 +0000 - dagster - DEBUG - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - 1546 - dbt_transformation_assets - STEP_START - Started execution of step "dbt_transformation_assets".
+2026-06-09 10:38:33 +0000 - dagster - INFO - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - dbt_transformation_assets - A dbt subsetted execution is not being performed. Using the default dbt selection arguments `['--select', 'fqn:*']`.
+2026-06-09 10:38:40 +0000 - dagster - INFO - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - dbt_transformation_assets - Copying `/opt/dagster/app/dbt_project/target/partial_parse.msgpack` to `/opt/dagster/app/dbt_project/target/dbt_transformation_assets-a3b0a9f-de55bf4/partial_parse.msgpack` to take advantage of partial parsing.
+2026-06-09 10:38:40 +0000 - dagster - INFO - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - dbt_transformation_assets - Running dbt command: `dbt build --select fqn:*`.
+2026-06-09 10:38:48 +0000 - dagster - DEBUG - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - 1546 - dbt_transformation_assets - STEP_OUTPUT - Yielded output "stg_jobs" of type "Nothing". (Type check passed).
+2026-06-09 10:38:48 +0000 - dagster - DEBUG - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - 1546 - dbt_transformation_assets - ASSET_MATERIALIZATION - Materialized value stg_jobs.
+2026-06-09 10:38:48 +0000 - dagster - DEBUG - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - 1546 - dbt_transformation_assets - STEP_OUTPUT - Yielded output "dim_jobs_clean" of type "Nothing". (Type check passed).
+2026-06-09 10:38:49 +0000 - dagster - DEBUG - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - 1546 - dbt_transformation_assets - ASSET_MATERIALIZATION - Materialized value dim_jobs_clean.
+2026-06-09 10:38:49 +0000 - dagster - INFO - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - dbt_transformation_assets - Finished dbt command: `dbt build --select fqn:*`.
+2026-06-09 10:38:49 +0000 - dagster - DEBUG - __ASSET_JOB - a3b0a9f2-1a79-4a28-ae33-51e73de063d6 - 1546 - dbt_transformation_assets - STEP_SUCCESS - Finished execution of step "dbt_transformation_assets" in 16.71s.

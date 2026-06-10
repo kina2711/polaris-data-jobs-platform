@@ -14,8 +14,8 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-        working-directory: ./frontend
+        working-directory: ./apps/web
       - run: npm run build
-        working-directory: ./frontend
+        working-directory: ./apps/web
         env:
           SKIP_ENV_VALIDATION: '1'

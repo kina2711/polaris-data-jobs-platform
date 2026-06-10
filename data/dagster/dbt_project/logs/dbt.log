@@ -1,0 +1,21 @@
+[0m10:35:29.702644 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f1372d20b0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f1360e1390>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f1360e3fa0>]}
+
+
+============================== 10:35:29.709440 | e4bbfa68-dd12-412e-9e03-76662bb7fda6 ==============================
+[0m10:35:29.709440 [info ] [MainThread]: Running with dbt=1.11.11
+[0m10:35:29.711340 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'quiet': 'False', 'empty': 'None', 'profiles_dir': '.', 'fail_fast': 'False', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'invocation_command': 'dbt parse --profiles-dir .', 'debug': 'False', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'use_colors': 'True', 'warn_error': 'None', 'version_check': 'True', 'introspect': 'True', 'static_parser': 'True', 'log_format': 'default', 'indirect_selection': 'eager', 'no_print': 'None', 'log_path': '/opt/dagster/app/dbt_project/logs', 'cache_selected_only': 'False', 'use_experimental_parser': 'False', 'log_cache_events': 'False', 'write_json': 'True'}
+[0m10:35:30.112833 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'e4bbfa68-dd12-412e-9e03-76662bb7fda6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f13901ec80>]}
+[0m10:35:30.234378 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': 'e4bbfa68-dd12-412e-9e03-76662bb7fda6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f13495bd90>]}
+[0m10:35:30.239969 [info ] [MainThread]: Registered adapter: postgres=1.10.0
+[0m10:35:30.349300 [debug] [MainThread]: checksum: 30a8cc8fdcbf66701b0944d4ccce3fa46dd04b61e5df68b9f16d57b2e0e3f0be, vars: {}, profile: , target: , version: 1.11.11
+[0m10:35:30.352967 [info ] [MainThread]: Unable to do partial parsing because saved manifest not found. Starting full parse.
+[0m10:35:30.354440 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'partial_parser', 'label': 'e4bbfa68-dd12-412e-9e03-76662bb7fda6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f134986380>]}
+[0m10:35:32.256404 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': 'e4bbfa68-dd12-412e-9e03-76662bb7fda6', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f1323ad4b0>]}
+[0m10:35:32.269181 [info ] [MainThread]: Performance info: /opt/dagster/app/dbt_project/target/perf_info.json
+[0m10:35:32.444470 [debug] [MainThread]: Wrote artifact WritableManifest to /opt/dagster/app/dbt_project/target/manifest.json
+[0m10:35:32.454243 [debug] [MainThread]: Wrote artifact SemanticManifest to /opt/dagster/app/dbt_project/target/semantic_manifest.json
+[0m10:35:32.458229 [debug] [MainThread]: Resource report: {"command_name": "parse", "command_success": true, "command_wall_clock_time": 2.9162214, "process_in_blocks": "28328", "process_kernel_time": 0.659716, "process_mem_max_rss": "125184", "process_out_blocks": "0", "process_user_time": 4.642302}
+[0m10:35:32.460956 [debug] [MainThread]: Command `dbt parse` succeeded at 10:35:32.460662 after 2.92 seconds
+[0m10:35:32.462311 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f1372d20b0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f13495bd90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x77f132332080>]}
+[0m10:35:32.464364 [debug] [MainThread]: Flushing usage events
+[0m10:35:34.754729 [debug] [MainThread]: An error was encountered while trying to flush usage events

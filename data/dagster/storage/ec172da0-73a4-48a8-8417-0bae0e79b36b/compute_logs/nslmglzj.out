@@ -1,0 +1,16 @@
+Running with dbt=1.11.11
+Registered adapter: postgres=1.10.0
+Found 2 models, 1 source, 475 macros
+
+Concurrency: 4 threads (target='dev')
+
+1 of 2 START sql view model public.stg_jobs .................................... [RUN]
+1 of 2 OK created sql view model public.stg_jobs ............................... [[32mCREATE VIEW[0m in 0.43s]
+2 of 2 START sql table model public.dim_jobs_clean ............................. [RUN]
+2 of 2 OK created sql table model public.dim_jobs_clean ........................ [[32mSELECT 70[0m in 0.30s]
+
+Finished running 1 table model, 1 view model in 0 hours 0 minutes and 1.19 seconds (1.19s).
+
+[32mCompleted successfully[0m
+
+Done. PASS=2 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=2

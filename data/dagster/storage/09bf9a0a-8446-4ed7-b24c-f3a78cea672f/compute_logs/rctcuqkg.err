@@ -1,0 +1,7 @@
+2026-06-10 01:56:34 +0000 - dagster - DEBUG - __ASSET_JOB - 09bf9a0a-8446-4ed7-b24c-f3a78cea672f - 18521 - LOGS_CAPTURED - Capturing logs for process (pid: 18521).
+2026-06-10 01:56:34 +0000 - dagster - DEBUG - __ASSET_JOB - 09bf9a0a-8446-4ed7-b24c-f3a78cea672f - 18521 - discord_notification_asset - STEP_START - Started execution of step "discord_notification_asset".
+2026-06-10 01:56:34 +0000 - dagster - INFO - __ASSET_JOB - 09bf9a0a-8446-4ed7-b24c-f3a78cea672f - discord_notification_asset - Sending 40 jobs to Discord...
+2026-06-10 01:56:41 +0000 - dagster - INFO - __ASSET_JOB - 09bf9a0a-8446-4ed7-b24c-f3a78cea672f - discord_notification_asset - Discord notification sent successfully for 40 jobs.
+2026-06-10 01:56:41 +0000 - dagster - DEBUG - __ASSET_JOB - 09bf9a0a-8446-4ed7-b24c-f3a78cea672f - 18521 - discord_notification_asset - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+2026-06-10 01:56:41 +0000 - dagster - DEBUG - __ASSET_JOB - 09bf9a0a-8446-4ed7-b24c-f3a78cea672f - 18521 - discord_notification_asset - ASSET_MATERIALIZATION - Materialized value discord_notification_asset.
+2026-06-10 01:56:41 +0000 - dagster - DEBUG - __ASSET_JOB - 09bf9a0a-8446-4ed7-b24c-f3a78cea672f - 18521 - discord_notification_asset - STEP_SUCCESS - Finished execution of step "discord_notification_asset" in 7.1s.

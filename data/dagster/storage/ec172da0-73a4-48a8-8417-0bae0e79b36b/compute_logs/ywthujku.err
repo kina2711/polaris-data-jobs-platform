@@ -1,0 +1,6 @@
+2026-06-10 07:16:37 +0000 - dagster - DEBUG - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - 21715 - LOGS_CAPTURED - Capturing logs for process (pid: 21715).
+2026-06-10 07:16:37 +0000 - dagster - DEBUG - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - 21715 - parsed_itviec_jobs_postgresql - STEP_START - Started execution of step "parsed_itviec_jobs_postgresql".
+2026-06-10 07:16:37 +0000 - dagster - WARNING - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - parsed_itviec_jobs_postgresql - No jobs parsed from ITViec!
+2026-06-10 07:16:37 +0000 - dagster - DEBUG - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - 21715 - parsed_itviec_jobs_postgresql - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+2026-06-10 07:16:37 +0000 - dagster - DEBUG - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - 21715 - parsed_itviec_jobs_postgresql - ASSET_MATERIALIZATION - Materialized value parsed_itviec_jobs_postgresql.
+2026-06-10 07:16:37 +0000 - dagster - DEBUG - __ASSET_JOB - ec172da0-73a4-48a8-8417-0bae0e79b36b - 21715 - parsed_itviec_jobs_postgresql - STEP_SUCCESS - Finished execution of step "parsed_itviec_jobs_postgresql" in 271ms.
