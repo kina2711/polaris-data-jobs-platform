@@ -187,14 +187,13 @@ graph TD
      to calculate Semantic Search scores using `pgvector` when users paste their
      CVs.
 
-> **[CLOUD ARCHITECTURE SCREENSHOT PLACEHOLDERS]**
->
-> _(Please replace the placeholders below with actual image links)_
->
-> 1. Screenshot of a successful run history (Green Checks) on GitHub Actions:
->    `![GitHub Actions Run](docs/github_actions.png)`
-> 2. Screenshot of the live Website (Next.js) demonstrating the AI Match
->    feature: `![Next.js Web Portal](docs/web_portal.png)`
+### ☁️ Cloud Architecture & Live Demo
+
+1. **GitHub Actions Run History:**
+![GitHub Actions Run](docs/github_actions.png)
+
+2. **Next.js Web Portal (AI Match Feature):**
+![Next.js Web Portal](docs/web_portal.png)
 
 ---
 
@@ -267,3 +266,19 @@ Visit `http://localhost:3000` to open the Dagster Webserver.
 
 Feel free to open an issue or submit a pull request if you have ideas to improve
 the matching algorithm or add more job sources!
+
+---
+
+## 🛠️ How to Add a New Crawler Source
+
+The system is highly modular. Adding a new source (e.g., `vietnamworks`) is extremely easy:
+
+1. **Create a new file:** `data/dagster/crawl_pipeline/assets/ingestion/vietnamworks_assets.py`.
+2. **Inherit HTTP Client:** Import `http_client.py` to share the Proxy/User-Agent and anti-bot retry logic:
+   ```python
+   from ...utils.http_client import build_session, get_html
+   ```
+3. **Define 2 Dagster `@asset`s:**
+   - **Function 1:** Crawl HTML job lists -> Save to `minio_resource`.
+   - **Function 2:** Extract HTML from MinIO to JSON -> Upsert into `postgres_resource`.
+4. **Done!** You don't need to register these functions anywhere. Thanks to `load_assets_from_package_module` in `__init__.py`, the Dagster orchestrator will automatically detect `vietnamworks_assets.py` and display it on the UI.

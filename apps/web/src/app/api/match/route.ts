@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { pipeline } from '@xenova/transformers';
+import { extractSkills, computeSkillGap } from '@/lib/skill_extractor';
 
 const prisma = new PrismaClient();
 
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
 
     const whereClause = queryConditions.join(' AND ');
 
-    let jobs;
+    let jobs: any[] = [];
     if (vectorStr) {
       jobs = await prisma.$queryRawUnsafe(`
         SELECT 
@@ -90,6 +91,20 @@ export async function POST(request: Request) {
         LIMIT ${limit} OFFSET ${offset}
       `);
     }
+
+    // AI Skill Gap Analysis
+    const cvSkills = extractSkills(cvText || '');
+    
+    jobs = jobs.map((job: any) => {
+      // Requirements and description might contain skills
+      const jobSkills = extractSkills((job.requirements || '') + ' ' + (job.description || ''));
+      const skillGap = computeSkillGap(cvSkills, jobSkills);
+      
+      return {
+        ...job,
+        skillAnalysis: skillGap
+      };
+    });
 
     return NextResponse.json({ jobs, page, limit });
   } catch (error) {

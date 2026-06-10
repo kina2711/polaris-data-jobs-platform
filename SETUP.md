@@ -1,76 +1,52 @@
-# 🚀 Hướng dẫn Cài đặt & Khởi chạy Local (Docker Architecture)
+# 🚀 Setup & Local Deployment Guide (Docker Architecture)
 
-Hệ thống Data Pipeline được thiết kế với Data Lake (MinIO), Asset-based
-Orchestrator (Dagster), Semantic Layer (Cube.js) và Vector Database (pgvector)
-kết hợp cùng AI Embeddings.
+The Data Pipeline system is designed with a Data Lake (MinIO), an Asset-based Orchestrator (Dagster), a Semantic Layer (Cube.js), and a Vector Database (pgvector) combined with AI Embeddings.
 
-> **Lưu ý**: Đây là kiến trúc Local Docker dùng cho phát triển/tham khảo. Kiến
-> trúc Production hiện tại sử dụng GitHub Actions + Neon.tech + Vercel (xem
-> README.md).
+> **Note**: This is the Local Docker architecture intended for development and reference. The current Production architecture uses GitHub Actions + Neon.tech + Vercel (see README.md).
 
 ---
 
-## Bước 1: Khởi động Hệ sinh thái (Docker)
+## Step 1: Start the Ecosystem (Docker)
 
-Hệ thống yêu cầu **Docker Desktop**.
+The system requires **Docker Desktop**.
 
-1. Đảm bảo các port `5432`, `6379`, `9000`, `9001`, `3000`, `3001`, `3400`,
-   `4000` đang trống.
-2. Mở Terminal, di chuyển vào thư mục project và chạy:
+1. Ensure ports `5432`, `6379`, `9000`, `9001`, `3000`, `3001`, `3400`, and `4000` are available.
+2. Open your Terminal, navigate to the project directory, and run:
    ```bash
-   docker compose up -d
+   docker compose up -d --build
    ```
-3. Đợi khoảng 1-2 phút cho các dịch vụ khởi động hoàn tất.
+3. Wait for about 1-2 minutes for all services to finish initializing.
 
 ---
 
-## Bước 2: Cào và Bóc tách Dữ liệu (Dagster)
+## Step 2: Crawl and Extract Data (Dagster)
 
-1. Mở trình duyệt: **http://localhost:3000** (Dagster Webserver).
-2. Ở menu bên trái, chọn **Assets**.
-3. Bấm **"Materialize All"** ở góc phải để kích hoạt các Asset:
-   - `topcv_search_pages_html`: Cào danh sách trang.
-   - `topcv_job_details_html`: Cào chi tiết Job lưu vào MinIO.
-   - `parsed_jobs_postgresql`: Dùng BeautifulSoup bóc tách thông tin và đẩy vào
-     PostgreSQL (`raw_jobs`).
-4. (Tuỳ chọn) Kiểm tra HTML thô tại Data Lake MinIO (**http://localhost:9001** -
-   `admin` / `password`).
+1. Open your browser: **http://localhost:3000** (Dagster Webserver).
+2. On the left navigation menu, select **Assets**.
+3. Click **"Materialize All"** in the top right corner to trigger the Assets:
+   - Data Ingestion: Crawls job data from LinkedIn, TopCV, and ITViec.
+   - Transformation (DBT): Cleans and models the data.
+   - AI Vectorization: Creates embeddings for the jobs.
+4. (Optional) Check the raw HTML at the MinIO Data Lake (**http://localhost:9001** - `admin` / `password`).
 
 ---
 
-## Bước 3: Kích hoạt AI Vectorization
+## Step 3: Explore Data with Semantic Layer & BI
 
-Để sử dụng tính năng "Smart Match" (Tìm việc bằng AI Semantic Search):
-
-1. Mở Terminal, di chuyển vào thư mục Web:
-   ```bash
-   cd web
-   npm install
-   node scripts/vectorize.js
-   ```
-   _Quá trình này sử dụng AI Model `@xenova/transformers` (chạy offline, không
-   tốn API) để mã hóa Job thành Vector 384 chiều._
+1. **Cube.js (http://localhost:4000)**: The Semantic Layer for the entire system.
+2. **Metabase (http://localhost:3001)**: Visualize charts and dashboards. Connect to the database `crawl_jobs_db` (Host: `postgresql_db`, User/Pass: `postgres`).
 
 ---
 
-## Bước 4: Khám phá Dữ liệu với Semantic Layer & BI
+## Step 4: Experience the Web Portal
 
-1. **Cube.js (http://localhost:4000)**: Semantic Layer cho toàn bộ hệ thống.
-2. **Metabase (http://localhost:3001)**: Vẽ biểu đồ trực quan. Kết nối tới
-   Database `crawl_jobs_db` (Host: `postgresql_db`, User/Pass: `postgres`).
-
----
-
-## Bước 5: Trải nghiệm Web Portal
-
-1. Truy cập: **http://localhost:3400**
-2. Chức năng **Smart Match**: Dán CV vào, hệ thống sẽ tìm Job khớp nhất bằng
-   `pgvector` cosine similarity.
+1. Access: **http://localhost:3400**
+2. **Smart Match** Feature: Paste your CV, and the system will find the most suitable jobs using `pgvector` cosine similarity.
 
 ---
 
 💡 **Troubleshooting:**
 
-- `docker compose ps` để kiểm tra service.
-- `docker compose down` để tắt.
-- `docker compose down -v` để xóa sạch data.
+- `docker compose ps` to check running services.
+- `docker compose down` to stop the ecosystem.
+- `docker compose down -v` to completely wipe all data and start fresh.

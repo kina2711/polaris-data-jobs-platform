@@ -252,6 +252,55 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Salary Distribution Bar Chart */}
+          <div className="glass-panel p-6 lg:col-span-2">
+            <h3 className="text-lg font-bold mb-6">
+              Phân Bổ Mức Lương (VNĐ)
+            </h3>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={data.salaryDistribution}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#ffffff10"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="name"
+                    stroke="#9ca3af"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#9ca3af"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <RechartsTooltip
+                    cursor={{ fill: '#ffffff0a' }}
+                    contentStyle={{
+                      backgroundColor: '#1f2937',
+                      border: '1px solid #374151',
+                      borderRadius: '8px',
+                    }}
+                  />
+                  <Bar
+                    dataKey="jobs"
+                    fill="#10b981"
+                    radius={[4, 4, 0, 0]}
+                    barSize={40}
+                    name="Số lượng job"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       </div>
     </div>

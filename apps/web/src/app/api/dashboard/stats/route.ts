@@ -98,12 +98,66 @@ export async function GET() {
       jobs: Number(item.count),
     }));
 
+    // 6. Salary Distribution
+    const salaryRaw = await prisma.$queryRawUnsafe<any[]>(`
+      SELECT salary 
+      FROM raw_jobs 
+      WHERE salary IS NOT NULL AND salary != '' AND salary != 'Thoả thuận' AND salary != 'Thỏa thuận'
+      LIMIT 5000
+    `);
+
+    let under10 = 0;
+    let from10to20 = 0;
+    let from20to40 = 0;
+    let over40 = 0;
+
+    salaryRaw.forEach((row) => {
+      const s = row.salary.toLowerCase();
+      // Extract numbers
+      const numbers = s.match(/\d+/g);
+      if (!numbers) return;
+      
+      let min = 0, max = 0;
+      if (numbers.length >= 2) {
+        min = parseInt(numbers[0]);
+        max = parseInt(numbers[1]);
+      } else if (numbers.length === 1) {
+        min = parseInt(numbers[0]);
+        max = min;
+      }
+      
+      // Basic normalization: if values are huge (e.g. 10000000), convert to millions
+      if (min >= 1000000) min = min / 1000000;
+      if (max >= 1000000) max = max / 1000000;
+      
+      // If it is in USD, approximate conversion to VND (x25000)
+      if (s.includes('usd') || s.includes('$')) {
+        min = (min * 25000) / 1000000;
+        max = (max * 25000) / 1000000;
+      }
+
+      const avg = (min + max) / 2;
+      
+      if (avg < 10) under10++;
+      else if (avg <= 20) from10to20++;
+      else if (avg <= 40) from20to40++;
+      else over40++;
+    });
+
+    const salaryDistribution = [
+      { name: '< 10 Triệu', jobs: under10 },
+      { name: '10 - 20 Triệu', jobs: from10to20 },
+      { name: '20 - 40 Triệu', jobs: from20to40 },
+      { name: '> 40 Triệu', jobs: over40 },
+    ];
+
     return NextResponse.json({
       totalJobs,
       jobsBySource,
       jobsByLocation,
       topCompanies,
       trends,
+      salaryDistribution,
     });
   } catch (error) {
     console.error('Dashboard API Error:', error);

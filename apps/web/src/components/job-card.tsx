@@ -90,6 +90,22 @@ function ListRow({ job }: { job: Job }) {
             {relativeDate}
           </span>
         </div>
+
+        {/* Skill Gap Analysis Badges */}
+        {(job as any).skillAnalysis && (
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            {(job as any).skillAnalysis.matchedSkills?.map((skill: string) => (
+              <span key={skill} className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-green-500/10 text-green-600 border border-green-500/20">
+                ✓ {skill}
+              </span>
+            ))}
+            {(job as any).skillAnalysis.missingSkills?.map((skill: string) => (
+              <span key={skill} className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-500/10 text-gray-500 border border-gray-500/20">
+                - {skill}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Right Action */}
@@ -154,6 +170,22 @@ function GridCard({ job }: { job: Job }) {
           {relativeDate}
         </span>
       </div>
+
+      {/* Skill Gap Analysis Badges */}
+      {(job as any).skillAnalysis && (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {(job as any).skillAnalysis.matchedSkills?.map((skill: string) => (
+            <span key={skill} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-600 border border-green-500/20">
+              ✓ {skill}
+            </span>
+          ))}
+          {(job as any).skillAnalysis.missingSkills?.map((skill: string) => (
+            <span key={skill} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-500/10 text-gray-500 border border-gray-500/20">
+              - {skill}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 pt-2">
         <a
