@@ -48,13 +48,18 @@ export function getRedis(): Redis | null {
   if (redisDisabled) return null;
   if (!redis) {
     try {
-      const commonOptions = {
-        connectTimeout: 1000,
-        commandTimeout: 500,
-        maxRetriesPerRequest: 1,
+      const commonOptions: any = {
+        connectTimeout: 10000,
+        commandTimeout: 5000,
+        maxRetriesPerRequest: 3,
         enableOfflineQueue: false,
         lazyConnect: false,
+        family: 4,
       };
+      
+      if (process.env.REDIS_URL?.startsWith('rediss://')) {
+        commonOptions.tls = { rejectUnauthorized: false };
+      }
 
       if (process.env.REDIS_URL) {
         redis = new Redis(process.env.REDIS_URL, commonOptions);
