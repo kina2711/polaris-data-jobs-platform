@@ -13,7 +13,7 @@ function getRedis(): Redis | null {
         commandTimeout: 5000,
         maxRetriesPerRequest: 3,
         enableOfflineQueue: false,
-        lazyConnect: false,
+        lazyConnect: true,
         family: 4,
       };
       
