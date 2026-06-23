@@ -51,7 +51,6 @@ const CSP = [
 ].join('; ');
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
   serverExternalPackages: ['mysql2', '@xenova/transformers'],
   images: {
     remotePatterns: [
