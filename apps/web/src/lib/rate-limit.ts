@@ -8,16 +8,24 @@ function getRedis(): Redis | null {
   if (redisDisabled) return null;
   if (!redis) {
     try {
-      redis = new Redis({
-        host: process.env.REDIS_HOST || 'aquilalab_redis',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || undefined,
+      const commonOptions = {
         connectTimeout: 1000,
         commandTimeout: 300,
         maxRetriesPerRequest: 1,
         enableOfflineQueue: false,
         lazyConnect: false,
-      });
+      };
+
+      if (process.env.REDIS_URL) {
+        redis = new Redis(process.env.REDIS_URL, commonOptions);
+      } else {
+        redis = new Redis({
+          host: process.env.REDIS_HOST || 'aquilalab_redis',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          password: process.env.REDIS_PASSWORD || undefined,
+          ...commonOptions,
+        });
+      }
       redis.on('error', (err: Error) => {
         console.error('[rate-limit] redis error:', err.message);
       });
