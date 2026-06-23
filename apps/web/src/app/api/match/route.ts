@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { pipeline } from '@xenova/transformers';
+import { env, pipeline } from '@xenova/transformers';
 import { extractSkills, computeSkillGap } from '@/lib/skill_extractor';
+
+env.cacheDir = '/tmp';
 
 const prisma = new PrismaClient();
 

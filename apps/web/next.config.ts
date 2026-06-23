@@ -52,7 +52,7 @@ const CSP = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  serverExternalPackages: ['mysql2'],
+  serverExternalPackages: ['mysql2', '@xenova/transformers'],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.topcv.vn' },
