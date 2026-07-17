@@ -2,8 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const ogSize = { width: 1200, height: 630 };
 export const ogContentType = 'image/png';
-export const ogAlt =
-  'Crawl Job Data Pipeline — Việc làm Data & AI tại Việt Nam';
+export const ogAlt = 'Polaris Data Jobs — Việc làm Data & AI tại Việt Nam';
 
 const OG_CACHE_HEADERS = {
   'Cache-Control':
@@ -165,7 +164,7 @@ export function renderOgCard({
         }}
       >
         <div style={{ display: 'flex', fontSize: 24, color: SLATE_400 }}>
-          Crawl Job Data Pipeline
+          Polaris Data Jobs
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           {(safeTags.length > 0

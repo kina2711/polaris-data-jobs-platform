@@ -1,5 +1,6 @@
 import Redis from 'ioredis';
 import { headers } from 'next/headers';
+import { isIP } from 'node:net';
 
 let redis: Redis | null = null;
 let redisDisabled = false;
@@ -12,20 +13,25 @@ function getRedis(): Redis | null {
         connectTimeout: 10000,
         commandTimeout: 5000,
         maxRetriesPerRequest: 3,
-        enableOfflineQueue: false,
-        lazyConnect: true,
+        // checkRateLimit sends INCR immediately; eager connection avoids the
+        // first request falling through to the local bucket while Redis is up.
+        enableOfflineQueue: true,
+        lazyConnect: false,
         family: 4,
       };
-      
+
       if (process.env.REDIS_URL?.startsWith('rediss://')) {
-        commonOptions.tls = { rejectUnauthorized: false };
+        commonOptions.tls = {
+          rejectUnauthorized:
+            process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== 'false',
+        };
       }
 
       if (process.env.REDIS_URL) {
         redis = new Redis(process.env.REDIS_URL, commonOptions);
       } else {
         redis = new Redis({
-          host: process.env.REDIS_HOST || 'aquilalab_redis',
+          host: process.env.REDIS_HOST || 'redis',
           port: parseInt(process.env.REDIS_PORT || '6379'),
           password: process.env.REDIS_PASSWORD || undefined,
           ...commonOptions,
@@ -99,12 +105,9 @@ export async function checkRateLimit(
   limit: number,
   windowSec: number,
 ): Promise<RateLimitResult> {
-  // fallback:unresolved có nghĩa request đi qua proxy không trust được hoặc
-  // thiếu header IP. Deny luôn thay vì gộp chung 1 bucket — attacker có thể
-  // spoof header để đẩy request vào bucket này.
-  if (ip === 'fallback:unresolved') {
-    return { allowed: false, remaining: 0, resetIn: windowSec };
-  }
+  // An unresolved production IP shares one strict global bucket. This keeps a
+  // direct Docker deployment usable without silently disabling rate limiting;
+  // trusted proxy headers should still be configured for per-client buckets.
   const key = `rl:${scope}:${ip}`;
   const r = getRedis();
   if (!r) return localIncr(key, limit, windowSec);
@@ -127,11 +130,7 @@ export async function checkRateLimit(
 
 function trustProxyHeaders(): boolean {
   const raw = process.env.TRUST_PROXY_HEADERS;
-  if (raw === undefined) {
-    // Default: trust in production (app runs behind Cloudflare / reverse proxy),
-    // do not trust in dev/test so local curl can't spoof headers.
-    return process.env.NODE_ENV === 'production';
-  }
+  if (raw === undefined) return false;
   return raw === '1' || raw.toLowerCase() === 'true';
 }
 
@@ -139,31 +138,62 @@ function trustProxyHeaders(): boolean {
  * Normalize IP so IPv4 forms match exactly and IPv6 addresses collapse to /64.
  * Returns null for empty / malformed input.
  */
-function normalizeIp(raw: string): string | null {
+function expandIpv6(raw: string): string[] | null {
+  let normalized = raw;
+  const embeddedIpv4 = raw.match(/(\d{1,3}(?:\.\d{1,3}){3})$/);
+  if (embeddedIpv4 && isIP(embeddedIpv4[1]) === 4) {
+    const octets = embeddedIpv4[1].split('.').map(Number);
+    const high = ((octets[0] << 8) | octets[1]).toString(16);
+    const low = ((octets[2] << 8) | octets[3]).toString(16);
+    normalized = `${raw.slice(0, -embeddedIpv4[1].length)}${high}:${low}`;
+  }
+
+  const halves = normalized.toLowerCase().split('::');
+  if (halves.length > 2) return null;
+  const left = halves[0] ? halves[0].split(':') : [];
+  const right = halves[1] ? halves[1].split(':') : [];
+  const missing = 8 - left.length - right.length;
+  if (halves.length === 1 && missing !== 0) return null;
+  if (halves.length === 2 && missing < 1) return null;
+  return [...left, ...Array(missing).fill('0'), ...right];
+}
+
+export function normalizeIp(raw: string): string | null {
   const trimmed = raw
     .trim()
     .replace(/^\[|\]$/g, '')
     .split('%')[0];
   if (!trimmed) return null;
-  if (trimmed.includes(':')) {
-    const parts = trimmed.toLowerCase().split(':');
-    if (parts.length < 3) return null;
-    // First 4 groups ≈ /64 network — enough to batch an address block together.
-    const prefix = parts
-      .slice(0, 4)
-      .map((p) => p || '0')
-      .join(':');
-    return `v6:${prefix}`;
+  const mappedIpv4 = trimmed.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i);
+  if (mappedIpv4 && isIP(mappedIpv4[1]) === 4) {
+    return `v4:${mappedIpv4[1]
+      .split('.')
+      .map((part) => Number.parseInt(part, 10))
+      .join('.')}`;
   }
-  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(trimmed)) return null;
-  return `v4:${trimmed}`;
+  const version = isIP(trimmed);
+  if (version === 6) {
+    const groups = expandIpv6(trimmed);
+    if (!groups) return null;
+    // First four 16-bit groups are the /64 network prefix.
+    return `v6:${groups
+      .slice(0, 4)
+      .map((group) => Number.parseInt(group, 16).toString(16))
+      .join(':')}`;
+  }
+  if (version !== 4) return null;
+  return `v4:${trimmed
+    .split('.')
+    .map((part) => Number.parseInt(part, 10))
+    .join('.')}`;
 }
 
 /**
  * Resolve the client IP. Proxy-supplied headers are only trusted when
  * TRUST_PROXY_HEADERS is explicitly enabled (true in production behind
  * Cloudflare / Nginx). When no IP can be resolved, return a shared fallback
- * bucket so rate-limit still applies (stricter than leaking per-request).
+ * bucket so rate limiting still applies without making direct Compose traffic
+ * fail unconditionally.
  */
 export async function getClientIp(): Promise<string> {
   const trust = trustProxyHeaders();
@@ -187,5 +217,8 @@ export async function getClientIp(): Promise<string> {
     if (fromXri) return fromXri;
   }
 
+  // Local development has no trusted reverse-proxy header. Use one bounded
+  // bucket so local requests work without weakening production behavior.
+  if (process.env.NODE_ENV !== 'production') return 'dev:local';
   return 'fallback:unresolved';
 }

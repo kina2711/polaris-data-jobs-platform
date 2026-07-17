@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getPool, getRedis } from '@/lib/api';
+import { databaseIsHealthy, getRedis } from '@/lib/api';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 async function pingDb(): Promise<boolean> {
-  try {
-    const db = getPool();
-    await db.query('SELECT 1');
-    return true;
-  } catch {
-    return false;
-  }
+  return databaseIsHealthy();
 }
 
 async function pingRedis(): Promise<boolean> {

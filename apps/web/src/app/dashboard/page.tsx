@@ -87,7 +87,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-gray-400 text-sm">Công Ty Tuyển Dụng</p>
               <h3 className="text-3xl font-bold">
-                {data.topCompanies?.length || 0}+
+                {data.totalCompanies?.toLocaleString() || 0}
               </h3>
             </div>
           </div>
@@ -255,9 +255,7 @@ export default function DashboardPage() {
 
           {/* Salary Distribution Bar Chart */}
           <div className="glass-panel p-6 lg:col-span-2">
-            <h3 className="text-lg font-bold mb-6">
-              Phân Bổ Mức Lương (VNĐ)
-            </h3>
+            <h3 className="text-lg font-bold mb-6">Phân Bổ Mức Lương (VNĐ)</h3>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart

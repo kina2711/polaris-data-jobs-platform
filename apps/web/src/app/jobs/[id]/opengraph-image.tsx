@@ -11,13 +11,14 @@ export const contentType = ogContentType;
 const SOURCE_LABEL: Record<string, string> = {
   topcv: 'TopCV',
   linkedin: 'LinkedIn',
+  itviec: 'ITViec',
   vieclam24h: 'Vieclam24h',
 };
 
 function fallbackCard(reason: string) {
   return renderOgCard({
     eyebrow: 'Việc làm Data',
-    title: 'crawl_job_data_Pipeline',
+    title: 'Polaris Data Jobs',
     subtitle: reason,
   });
 }
@@ -35,14 +36,13 @@ export default async function Image({
   }
 
   const { id } = await params;
-  const jobId = parseInt(id, 10);
-  if (!Number.isFinite(jobId) || jobId <= 0) {
+  if (!id || id.length > 200) {
     return fallbackCard('Việc làm không tồn tại');
   }
 
   let job: Awaited<ReturnType<typeof fetchJobById>>;
   try {
-    job = await fetchJobById(jobId);
+    job = await fetchJobById(id);
   } catch (e) {
     console.error('[og] fetch failed:', (e as Error).message);
     return fallbackCard('Đang tải dữ liệu công việc…');

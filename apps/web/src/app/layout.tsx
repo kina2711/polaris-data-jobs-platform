@@ -25,26 +25,26 @@ export const metadata: Metadata = {
     icon: '/favicon.svg',
   },
   title: {
-    default: 'crawl_job_data_Pipeline — Việc làm Data tại Việt Nam',
-    template: '%s | crawl_job_data_Pipeline',
+    default: 'Polaris Data Jobs — Việc làm Data tại Việt Nam',
+    template: '%s | Polaris Data Jobs',
   },
   description:
-    'Tìm kiếm việc làm Data Analyst, Data Engineer, AI/ML tại Việt Nam. Tổng hợp từ TopCV, LinkedIn và Việc Làm 24h.',
+    'Tìm kiếm việc làm Data Analyst, Data Engineer, AI/ML tại Việt Nam. Tổng hợp từ TopCV, LinkedIn và ITViec.',
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3400',
   ),
   openGraph: {
     type: 'website',
     locale: 'vi_VN',
-    siteName: 'crawl_job_data_Pipeline',
-    title: 'crawl_job_data_Pipeline — Việc làm Data tại Việt Nam',
+    siteName: 'Polaris Data Jobs',
+    title: 'Polaris Data Jobs — Việc làm Data tại Việt Nam',
     description:
       'Tìm kiếm việc làm Data Analyst, Data Engineer, AI/ML tại Việt Nam.',
     url: '/',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'crawl_job_data_Pipeline — Việc làm Data tại Việt Nam',
+    title: 'Polaris Data Jobs — Việc làm Data tại Việt Nam',
     description:
       'Tìm kiếm việc làm Data Analyst, Data Engineer, AI/ML tại Việt Nam.',
   },

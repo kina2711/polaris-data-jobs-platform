@@ -1,5 +1,6 @@
 from dagster import AssetExecutionContext, MaterializeResult, asset
 
+
 @asset(
     deps=[
         "parsed_topcv_jobs_postgresql",

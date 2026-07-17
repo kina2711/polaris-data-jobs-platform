@@ -13,17 +13,22 @@ export function AlertRowActions({ id, active }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
   const toggle = () =>
     start(async () => {
       setBusy(true);
+      setError('');
       try {
-        await fetch(`/api/alerts/${id}`, {
+        const response = await fetch(`/api/alerts/${id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ active: !active }),
         });
+        if (!response.ok) throw new Error('Không thể cập nhật thông báo.');
         router.refresh();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : 'Có lỗi xảy ra.');
       } finally {
         setBusy(false);
       }
@@ -33,9 +38,13 @@ export function AlertRowActions({ id, active }: Props) {
     start(async () => {
       if (!confirm('Xoá thông báo này? Không thể hoàn tác.')) return;
       setBusy(true);
+      setError('');
       try {
-        await fetch(`/api/alerts/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/alerts/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Không thể xoá thông báo.');
         router.refresh();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : 'Có lỗi xảy ra.');
       } finally {
         setBusy(false);
       }
@@ -43,6 +52,11 @@ export function AlertRowActions({ id, active }: Props) {
 
   return (
     <div className="flex items-center gap-1.5 shrink-0">
+      {error && (
+        <span role="alert" className="text-xs text-red-600 max-w-40">
+          {error}
+        </span>
+      )}
       <button
         type="button"
         onClick={toggle}

@@ -1,10 +1,10 @@
 import NextAuth from 'next-auth';
 
 /**
- * NextAuth instance for the Crawl Job Data Pipeline web portal.
+ * NextAuth instance for the Polaris Data Jobs web portal.
  *
- * This is a simplified auth setup for the standalone project.
- * In production, configure AUTH_SECRET and NEXTAUTH_URL env vars.
+ * Authentication providers are intentionally NOT_IMPLEMENTED until the
+ * approved Polaris identity-provider contract is available.
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: 'jwt', maxAge: 15 * 60 },

@@ -1,1 +1,1 @@
-from . import discord_assets
+from . import discord_assets as discord_assets

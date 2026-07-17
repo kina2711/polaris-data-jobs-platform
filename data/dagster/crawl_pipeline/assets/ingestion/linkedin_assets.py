@@ -1,14 +1,21 @@
+import re
 from datetime import datetime
 from urllib.parse import quote
 
-import pandas as pd
 from bs4 import BeautifulSoup
 from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
-from sqlalchemy import text
 
 from ...resources.minio_resource import MinioResource
 from ...resources.postgres_resource import PostgresResource
-from ...utils.http_client import build_session, extract_text, get_html, smart_sleep
+from ...utils.http_client import (
+    build_session as build_http_session,
+)
+from ...utils.http_client import (
+    extract_text,
+    get_html,
+    smart_sleep,
+)
+from ...utils.raw_jobs import upsert_raw_jobs
 
 BASE = "https://www.linkedin.com"
 HEADERS = {
@@ -32,8 +39,7 @@ KEYWORDS = [
 
 
 def build_session():
-    from ...utils.http_client import build_session as bs
-    return bs(HEADERS)
+    return build_http_session(HEADERS)
 
 
 @asset(group_name="ingestion")
@@ -185,38 +191,6 @@ def parsed_linkedin_jobs_postgresql(context: AssetExecutionContext):
         context.log.warning("No jobs parsed from LinkedIn!")
         return MaterializeResult(metadata={"parsed": 0})
 
-    df = pd.DataFrame(parsed_jobs)
-
-    create_table_sql = """
-    CREATE TABLE IF NOT EXISTS raw_jobs (
-        id VARCHAR PRIMARY KEY,
-        title VARCHAR,
-        company VARCHAR,
-        location VARCHAR,
-        salary VARCHAR,
-        experience VARCHAR,
-        description TEXT,
-        requirements TEXT,
-        tags VARCHAR,
-        source VARCHAR,
-        url VARCHAR,
-        crawled_at TIMESTAMP
-    );
-    """
-    with pg.engine.begin() as conn:
-        conn.execute(text(create_table_sql))
-
-    existing_ids_query = "SELECT id FROM raw_jobs"
-    try:
-        existing_df = pd.read_sql(existing_ids_query, pg.engine)
-        existing_ids = existing_df["id"].tolist()
-        df = df[~df["id"].isin(existing_ids)]
-    except Exception as e:
-        context.log.warning(f"Could not fetch existing IDs: {e}")
-
-    inserted_count = 0
-    if not df.empty:
-        df.to_sql("raw_jobs", pg.engine, if_exists="append", index=False)
-        inserted_count = len(df)
+    inserted_count = upsert_raw_jobs(pg.engine, parsed_jobs)
 
     return MaterializeResult(metadata={"parsed_records": inserted_count})

@@ -106,13 +106,13 @@ export default async function AccountPage() {
         <p className="text-xs text-muted-foreground mb-3">
           Đăng xuất sẽ thoát khỏi phiên hiện tại.
         </p>
-        <a
+        <Link
           href="/api/auth/signout?callbackUrl=/"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-sm font-medium hover:bg-secondary transition-colors text-red-600"
         >
           <LogOutIcon className="w-4 h-4" />
           Đăng xuất
-        </a>
+        </Link>
       </section>
     </div>
   );

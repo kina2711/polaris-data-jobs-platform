@@ -25,27 +25,38 @@ yarn-error.log*
 # ========================
 # Dagster Runtime
 # ========================
-dagster_project/.logs_queue/
-dagster_project/logs/
-dagster_project/storage/
-dagster_project/.nux/
+data/dagster/.logs_queue/
+data/dagster/logs/
+data/dagster/storage/
+data/dagster/dagster_home/
+data/dagster/.nux/
 
 # ========================
 # dbt Artifacts
 # ========================
-dagster_project/dbt_project/target/
-dagster_project/dbt_project/logs/
-dagster_project/dbt_project/dbt_packages/
+data/dagster/dbt_project/target/
+data/dagster/dbt_project/logs/
+data/dagster/dbt_project/dbt_packages/
 
 # ========================
 # Cube.js
 # ========================
-semantic_layer/schema/
+data/semantic/.cubestore/
+data/semantic/cubejs.log
+
+# ========================
+# BI generated cache
+# ========================
+legacy/data-transformation-analytics/power_bi/*.pbi/cache.abf
+legacy/data-transformation-analytics/power_bi/*.pbi/.pbi/
 
 # ========================
 # Linter / Formatter Cache
 # ========================
 .ruff_cache/
+.pytest_cache/
+.coverage
+coverage/
 
 # ========================
 # IDE

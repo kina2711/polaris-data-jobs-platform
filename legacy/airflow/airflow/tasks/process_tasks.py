@@ -176,8 +176,9 @@ def insert_jobs_to_staging_layer(data_file_path: str, source_crawl: str):
 
 
 def insert_company_logos_to_staging_layer():
-    from scripts.utils.db_conn import DBConnection
     from sqlalchemy import text
+
+    from scripts.utils.db_conn import DBConnection
 
     try:
         conn = DBConnection()
@@ -277,12 +278,12 @@ def post_job_to_discord(crawl_source: str):
         send_job_alerts,
     )
 
-    DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-    DISCORD_CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID", "0"))
+    discord_token = os.getenv("DISCORD_TOKEN")
+    discord_channel_id = int(os.getenv("DISCORD_CHANNEL_ID", "0"))
 
-    if not DISCORD_TOKEN:
+    if not discord_token:
         raise ValueError("DISCORD_TOKEN environment variable is not set")
-    if DISCORD_CHANNEL_ID == 0:
+    if discord_channel_id == 0:
         raise ValueError(
             "DISCORD_CHANNEL_ID environment variable is not set or is invalid"
         )
@@ -293,21 +294,24 @@ def post_job_to_discord(crawl_source: str):
             if crawl_source == "itviec"
             else query_unposted_jobs(table_name="topcv_data_job")
         )
-        jobs, urls = query_data
+        jobs, _urls = query_data
         logger.info(f"Found {len(jobs)} new {crawl_source} jobs to post to Discord")
         if not jobs:
             logger.info(f"No new jobs from {crawl_source} to post to Discord")
             return {}
 
-        posts_send, posts_failed_sent = send_job_alerts(
-            jobs, DISCORD_TOKEN, DISCORD_CHANNEL_ID
+        successful_urls, posts_failed_sent = send_job_alerts(
+            jobs, discord_token, discord_channel_id
         )
         mark_jobs_as_posted(
-            table_name="itviec_data_job", job_urls=urls
+            table_name="itviec_data_job", job_urls=successful_urls
         ) if crawl_source == "itviec" else mark_jobs_as_posted(
-            table_name="topcv_data_job", job_urls=urls
+            table_name="topcv_data_job", job_urls=successful_urls
         )
-        return_dict = {"posts_sent": posts_send, "posts_failed": posts_failed_sent}
+        return_dict = {
+            "posts_sent": len(successful_urls),
+            "posts_failed": posts_failed_sent,
+        }
         return return_dict
     except Exception as e:
         logger.error(f"Error sending job alerts to Discord: {e}")

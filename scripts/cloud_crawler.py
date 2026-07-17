@@ -1,28 +1,24 @@
+"""Scheduled TopCV crawler for the canonical Polaris PostgreSQL raw_jobs table."""
+
+from __future__ import annotations
+
 import os
 import random
 import re
 import sys
 import time
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import Any
 from urllib.parse import urljoin
 
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from curl_cffi import requests as cffi_requests
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
 
-# Set environment variables from secrets
 DATABASE_URL = os.getenv("DATABASE_URL")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
-
-if not DATABASE_URL:
-    print("ERROR: DATABASE_URL is not set.")
-    sys.exit(1)
-
-# Ensure DATABASE_URL works with sqlalchemy (if starting with postgres:// change to postgresql://)
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 BASE = "https://www.topcv.vn"
 HEADERS = {
@@ -36,7 +32,6 @@ HEADERS = {
     "Referer": "https://www.topcv.vn/",
     "Connection": "keep-alive",
 }
-
 KEYWORDS = [
     "data-analyst",
     "data-engineer",
@@ -44,231 +39,339 @@ KEYWORDS = [
     "business-intelligence",
     "data-scientist",
 ]
+MAX_NEW_JOBS = 40
+MAX_BACKFILL_JOBS = 100
+
+RAW_JOBS_DDL = """
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE TABLE IF NOT EXISTS raw_jobs (
+    id TEXT PRIMARY KEY,
+    title TEXT,
+    company TEXT,
+    location TEXT,
+    salary TEXT,
+    experience TEXT,
+    description TEXT,
+    requirements TEXT,
+    tags TEXT,
+    source TEXT,
+    url TEXT,
+    crawled_at TIMESTAMP(3),
+    embedding vector(384)
+);
+"""
+
+
+def get_database_url() -> str:
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not set")
+    if DATABASE_URL.startswith("postgres://"):
+        return DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    return DATABASE_URL
 
 
 def build_session() -> cffi_requests.Session:
-    s = cffi_requests.Session(impersonate="chrome120")
-    s.headers.update(HEADERS)
-    return s
+    session = cffi_requests.Session(impersonate="chrome120")
+    session.headers.update(HEADERS)
+    return session
 
 
-def smart_sleep(min_s=1.0, max_s=2.5):
-    time.sleep(random.uniform(min_s, max_s))
+def smart_sleep(min_seconds: float = 1.0, max_seconds: float = 2.5) -> None:
+    time.sleep(random.uniform(min_seconds, max_seconds))
 
 
-def get_html(session, url: str) -> str:
+def get_html(session: cffi_requests.Session, url: str) -> str:
+    last_error: Exception | None = None
     for attempt in range(1, 4):
         try:
-            r = session.get(url, timeout=30)
-            if r.status_code in [429, 403]:
+            response = session.get(url, timeout=30)
+            if response.status_code in {403, 429}:
+                last_error = RuntimeError(f"HTTP {response.status_code}")
                 time.sleep(5 * attempt)
                 continue
-            r.raise_for_status()
-            return r.text
-        except Exception:
+            response.raise_for_status()
+            return response.text
+        except Exception as error:  # network library exposes several exception types
+            last_error = error
             time.sleep(2 * attempt)
+    print(f"WARN: failed to fetch {url}: {last_error}", file=sys.stderr)
     return ""
 
 
-def extract_text(el) -> str:
-    if not el:
+def extract_text(element: Any) -> str:
+    if not element:
         return ""
-    t = el.get_text(" ", strip=True)
-    return re.sub(r"\s+", " ", t) if t else ""
+    value = element.get_text(" ", strip=True)
+    return re.sub(r"\s+", " ", value) if value else ""
 
 
 def pick_info_value(soup: BeautifulSoup, title: str) -> str:
-    for sec in soup.select(".job-detail__info--section"):
-        t = extract_text(sec.select_one(".job-detail__info--section-content-title"))
-        if t.lower() == title.lower():
-            v = sec.select_one(".job-detail__info--section-content-value")
-            return extract_text(v) if v else extract_text(sec)
+    for section in soup.select(".job-detail__info--section"):
+        heading = extract_text(
+            section.select_one(".job-detail__info--section-content-title")
+        )
+        if heading.lower() == title.lower():
+            value = section.select_one(".job-detail__info--section-content-value")
+            return extract_text(value) if value else extract_text(section)
     return ""
 
 
-def extract_desc_blocks(soup: BeautifulSoup):
-    data = {}
+def extract_desc_blocks(soup: BeautifulSoup) -> dict[str, str]:
+    data: dict[str, str] = {}
     for item in soup.select(".job-description .job-description__item"):
-        h3 = extract_text(item.select_one("h3"))
+        heading = extract_text(item.select_one("h3"))
         content = item.select_one(".job-description__item--content")
-        if content:
-            data[h3] = extract_text(content)
+        if heading and content:
+            data[heading] = extract_text(content)
     return data
 
 
-def main():
-    print("Bắt đầu quá trình Cào dữ liệu Cloud Crawler...")
-    s = build_session()
-    qtpl = (
+def job_id_from_url(url: str) -> str:
+    return url.rstrip("/").split("/")[-1].removesuffix(".html")
+
+
+def discover_job_urls(session: cffi_requests.Session) -> set[str]:
+    query_template = (
         "https://www.topcv.vn/tim-viec-lam-{keyword}?type_keyword=1&page={page}&sba=1"
     )
-    pages_to_crawl = 2
-    job_urls = set()
-
-    # 1. Crawl Search Pages
-    print("Crawling danh sách Job...")
+    urls: set[str] = set()
     for keyword in KEYWORDS:
-        for page in range(1, pages_to_crawl + 1):
-            url = qtpl.format(keyword=keyword, page=page)
-            html = get_html(s, url)
+        for page in range(1, 3):
+            html = get_html(session, query_template.format(keyword=keyword, page=page))
             if not html:
                 break
-
             soup = BeautifulSoup(html, "html.parser")
             for job in soup.select("div.job-item-search-result"):
-                a_title = job.select_one("h3.title a[href]")
-                if a_title:
-                    j_url = urljoin(BASE, a_title.get("href")).split("?")[0]
-                    job_urls.add(j_url)
+                anchor = job.select_one("h3.title a[href]")
+                if anchor and anchor.get("href"):
+                    urls.add(urljoin(BASE, anchor["href"]).split("?")[0])
             smart_sleep()
+    return urls
 
-    print(f"Tìm thấy {len(job_urls)} jobs.")
 
-    # 2. Setup DB Connection
-    engine = create_engine(DATABASE_URL)
-    with engine.begin() as conn:
-        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
-        conn.execute(
+def crawl_job(session: cffi_requests.Session, job_url: str) -> dict[str, Any] | None:
+    html = get_html(session, job_url)
+    if not html:
+        return None
+
+    soup = BeautifulSoup(html, "html.parser")
+    title = extract_text(soup.select_one(".job-detail__info--title, h1"))
+    if not title:
+        print(f"WARN: missing title for {job_url}", file=sys.stderr)
+        return None
+
+    blocks = extract_desc_blocks(soup)
+    tags = [
+        extract_text(anchor)
+        for anchor in soup.select(".job-tags a.item")
+        if extract_text(anchor)
+    ]
+    company = extract_text(soup.select_one("a.company-name")) or extract_text(
+        soup.select_one("h2.company-name")
+    )
+    return {
+        "id": job_id_from_url(job_url),
+        "title": title,
+        "company": company,
+        "location": pick_info_value(soup, "Địa điểm"),
+        "salary": pick_info_value(soup, "Mức lương"),
+        "experience": pick_info_value(soup, "Kinh nghiệm"),
+        "description": blocks.get("Mô tả công việc", ""),
+        "requirements": blocks.get("Yêu cầu ứng viên", ""),
+        "tags": ", ".join(tags),
+        "source": "topcv",
+        "url": job_url,
+        "crawled_at": datetime.now(UTC).replace(tzinfo=None),
+    }
+
+
+def embedding_text(job: dict[str, Any]) -> str:
+    return (
+        f"Title: {job.get('title') or ''}. "
+        f"Experience: {job.get('experience') or ''}. "
+        f"Description: {job.get('description') or ''}. "
+        f"Requirements: {job.get('requirements') or ''}"
+    )
+
+
+def encode_jobs(model: Any, jobs: list[dict[str, Any]]) -> None:
+    if not jobs:
+        return
+    vectors = model.encode(
+        [embedding_text(job) for job in jobs], normalize_embeddings=True
+    )
+    if len(vectors) != len(jobs):
+        raise RuntimeError("Embedding model returned an unexpected vector count")
+    for job, vector in zip(jobs, vectors, strict=True):
+        values = vector.tolist()
+        if len(values) != 384:
+            raise RuntimeError(f"Expected a 384-dimensional vector for {job['id']}")
+        job["embedding"] = f"[{','.join(map(str, values))}]"
+
+
+def persist_new_jobs(
+    engine: Engine, jobs: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    if not jobs:
+        return []
+    statement = text("""
+        INSERT INTO raw_jobs (
+            id, title, company, location, salary, experience, description,
+            requirements, tags, source, url, crawled_at, embedding
+        ) VALUES (
+            :id, :title, :company, :location, :salary, :experience, :description,
+            :requirements, :tags, :source, :url, :crawled_at,
+            CAST(:embedding AS vector)
+        )
+        ON CONFLICT (id) DO NOTHING
+        RETURNING id
+    """)
+    inserted_ids: set[str] = set()
+    with engine.begin() as connection:
+        # Keep one transaction, but execute each bounded candidate separately so
+        # RETURNING identifies exactly which rows won a concurrent insert race.
+        for job in jobs:
+            inserted_id = connection.execute(statement, job).scalar_one_or_none()
+            if inserted_id:
+                inserted_ids.add(inserted_id)
+    return [job for job in jobs if job["id"] in inserted_ids]
+
+
+def backfill_embeddings(engine: Engine, model: Any) -> int:
+    with engine.connect() as connection:
+        rows = connection.execute(
             text("""
-            CREATE TABLE IF NOT EXISTS raw_jobs (
-                id VARCHAR PRIMARY KEY,
-                title VARCHAR,
-                company VARCHAR,
-                location VARCHAR,
-                salary VARCHAR,
-                experience VARCHAR,
-                description TEXT,
-                requirements TEXT,
-                tags VARCHAR,
-                source VARCHAR,
-                url VARCHAR,
-                crawled_at TIMESTAMP,
-                embedding vector(384)
-            );
-        """)
+                SELECT id, title, experience, description, requirements
+                FROM raw_jobs
+                WHERE embedding IS NULL
+                ORDER BY crawled_at ASC
+                LIMIT :limit
+            """),
+            {"limit": MAX_BACKFILL_JOBS},
+        ).mappings()
+        jobs = [dict(row) for row in rows]
+
+    encode_jobs(model, jobs)
+    if not jobs:
+        return 0
+
+    with engine.begin() as connection:
+        connection.execute(
+            text("""
+                UPDATE raw_jobs
+                SET embedding = CAST(:embedding AS vector)
+                WHERE id = :id AND embedding IS NULL
+            """),
+            [{"id": job["id"], "embedding": job["embedding"]} for job in jobs],
         )
+    return len(jobs)
 
-    existing_df = pd.read_sql("SELECT id FROM raw_jobs", engine)
-    existing_ids = set(existing_df["id"].tolist())
 
-    new_jobs = []
+def truncate(value: str | None, limit: int = 1_000) -> str:
+    text_value = value or "N/A"
+    return text_value if len(text_value) <= limit else f"{text_value[: limit - 1]}…"
 
-    # 3. Crawl Details
-    print("Crawling Job chi tiết...")
-    for job_url in list(job_urls)[:40]:  # Tối đa 40 job mới mỗi lần chạy
-        job_id = job_url.split("/")[-1].replace(".html", "")
-        if job_id in existing_ids:
-            continue
 
-        html = get_html(s, job_url)
-        if not html:
-            continue
-
-        soup = BeautifulSoup(html, "html.parser")
-        title = extract_text(soup.select_one(".job-detail__info--title, h1"))
-        salary = pick_info_value(soup, "Mức lương")
-        location = pick_info_value(soup, "Địa điểm")
-        experience = pick_info_value(soup, "Kinh nghiệm")
-        desc_blocks = extract_desc_blocks(soup)
-        description = desc_blocks.get("Mô tả công việc", "")
-        requirements = desc_blocks.get("Yêu cầu ứng viên", "")
-        company = extract_text(soup.select_one("a.company-name")) or extract_text(
-            soup.select_one("h2.company-name")
+def notify_discord(jobs: list[dict[str, Any]]) -> None:
+    if not DISCORD_WEBHOOK_URL or not jobs:
+        return
+    try:
+        response = requests.post(
+            DISCORD_WEBHOOK_URL,
+            json={
+                "username": "Polaris Data Jobs Bot",
+                "content": f"Polaris collected {len(jobs)} new TopCV jobs.",
+            },
+            timeout=15,
         )
-        tags = [
-            extract_text(a) for a in soup.select(".job-tags a.item") if extract_text(a)
-        ]
-
-        if title:
-            new_jobs.append(
-                {
-                    "id": job_id,
-                    "title": title,
-                    "company": company,
-                    "location": location,
-                    "salary": salary,
-                    "experience": experience,
-                    "description": description,
-                    "requirements": requirements,
-                    "tags": ", ".join(tags),
-                    "source": "topcv",
-                    "url": job_url,
-                    "crawled_at": datetime.now(),
-                }
+        response.raise_for_status()
+        for job in jobs:
+            embed = {
+                "title": truncate(job["title"], 250),
+                "url": job["url"],
+                "color": 3447003,
+                "fields": [
+                    {
+                        "name": "Company",
+                        "value": truncate(job["company"]),
+                        "inline": True,
+                    },
+                    {
+                        "name": "Location",
+                        "value": truncate(job["location"]),
+                        "inline": True,
+                    },
+                    {
+                        "name": "Salary",
+                        "value": truncate(job["salary"]),
+                        "inline": True,
+                    },
+                    {
+                        "name": "Experience",
+                        "value": truncate(job["experience"]),
+                        "inline": True,
+                    },
+                ],
+            }
+            response = requests.post(
+                DISCORD_WEBHOOK_URL,
+                json={"username": "Polaris Data Jobs Bot", "embeds": [embed]},
+                timeout=15,
             )
+            response.raise_for_status()
+            time.sleep(0.5)
+    except requests.RequestException as error:
+        print(f"WARN: Discord notification failed: {error}", file=sys.stderr)
+
+
+def main() -> None:
+    print("Starting Polaris cloud crawler.")
+    session = build_session()
+    discovered_urls = discover_job_urls(session)
+    print(f"Discovered {len(discovered_urls)} unique TopCV URLs.")
+
+    engine = create_engine(get_database_url(), pool_pre_ping=True)
+    with engine.begin() as connection:
+        connection.execute(text(RAW_JOBS_DDL))
+        existing_ids = set(
+            connection.execute(text("SELECT id FROM raw_jobs")).scalars()
+        )
+
+    candidate_urls = [
+        url
+        for url in sorted(discovered_urls)
+        if job_id_from_url(url) not in existing_ids
+    ][:MAX_NEW_JOBS]
+    new_jobs: list[dict[str, Any]] = []
+    for job_url in candidate_urls:
+        job = crawl_job(session, job_url)
+        if job:
+            new_jobs.append(job)
         smart_sleep(0.5, 1.5)
 
-    if not new_jobs:
-        print("Trạng thái: Không có job nào mới cần thêm.")
-        return
+    with engine.connect() as connection:
+        needs_backfill = bool(
+            connection.execute(
+                text("SELECT 1 FROM raw_jobs WHERE embedding IS NULL LIMIT 1")
+            ).scalar()
+        )
 
-    print(f"Đã cào {len(new_jobs)} jobs mới. Đang nạp AI Model...")
-
-    # 4. Generate Embeddings using Sentence Transformers
-    try:
+    if new_jobs or needs_backfill:
         from sentence_transformers import SentenceTransformer
 
         model = SentenceTransformer("all-MiniLM-L6-v2")
-        texts_to_embed = [
-            f"Title: {j['title']}. Exp: {j['experience']}. Desc: {j['description']}. Req: {j['requirements']}"
-            for j in new_jobs
-        ]
-        print("Đang tính toán Vector Embeddings...")
-        embeddings = model.encode(texts_to_embed, normalize_embeddings=True)
-        for i, job in enumerate(new_jobs):
-            job["embedding"] = embeddings[i].tolist()
-    except Exception as e:
-        print(f"Lỗi tạo embedding: {e}. Sẽ lưu None.")
-        for job in new_jobs:
-            job["embedding"] = None
+        encode_jobs(model, new_jobs)
+        inserted_jobs = persist_new_jobs(engine, new_jobs)
+        backfilled = backfill_embeddings(engine, model)
+    else:
+        inserted_jobs = []
+        backfilled = 0
 
-    # 5. Insert to DB
-    print("Lưu vào Database Neon...")
-    for job in new_jobs:
-        vec_str = (
-            f"'[{','.join(map(str, job['embedding']))}]'" if job["embedding"] else "NULL"
-        )
-        insert_sql = text(f"""
-            INSERT INTO raw_jobs (id, title, company, location, salary, experience, description, requirements, tags, source, url, crawled_at, embedding)
-            VALUES (:id, :title, :company, :location, :salary, :experience, :description, :requirements, :tags, :source, :url, :crawled_at, {vec_str})
-            ON CONFLICT (id) DO NOTHING;
-        """)
-        with engine.begin() as conn:
-            conn.execute(insert_sql, {k: v for k, v in job.items() if k != "embedding"})
-
-    print("Đã lưu DB xong!")
-
-    # 6. Discord Notification
-    if DISCORD_WEBHOOK_URL:
-        print("Gửi thông báo Discord...")
-        # Gửi tin nhắn tổng kết trước
-        summary = f"🎉 **Polaris Data Jobs Bot**: Vừa thu thập thành công **{len(new_jobs)}** jobs mới từ TopCV. Bắt đầu đẩy dữ liệu:"
-        requests.post(
-            DISCORD_WEBHOOK_URL,
-            json={"username": "Polaris Data Jobs Bot", "content": summary},
-        )
-        
-        # Gửi chi tiết từng job
-        for job in new_jobs:
-            embed = {
-                "title": job['title'],
-                "url": job['url'],
-                "description": f"🔗 **[Bấm vào đây để xem chi tiết và Ứng tuyển]({job['url']})**",
-                "color": 3447003,
-                "fields": [
-                    {"name": "🏢 Công ty", "value": job['company'] or "N/A", "inline": True},
-                    {"name": "📍 Địa điểm", "value": job['location'] or "N/A", "inline": True},
-                    {"name": "💰 Mức lương", "value": job['salary'] or "N/A", "inline": True},
-                    {"name": "⏳ Kinh nghiệm", "value": job['experience'] or "N/A", "inline": True},
-                ]
-            }
-            requests.post(
-                DISCORD_WEBHOOK_URL,
-                json={"username": "Polaris Data Jobs Bot", "embeds": [embed]},
-            )
-            time.sleep(0.5) # Tránh bị Discord rate limit
-
-    print("QUÁ TRÌNH HOÀN TẤT MỸ MÃN!")
+    notify_discord(inserted_jobs)
+    print(
+        f"Polaris crawler complete: inserted={len(inserted_jobs)}, "
+        f"backfilled_embeddings={backfilled}."
+    )
 
 
 if __name__ == "__main__":

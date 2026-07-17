@@ -1,21 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { getRedis, getPool } from '@/lib/api';
-import { jobMatchesFilters, sanitizeAlertFilters } from '@/lib/alert-match';
+import { getRedis, rawJobToJob } from '@/lib/api';
+import {
+  findUnsupportedAlertFilters,
+  jobMatchesFilters,
+  sanitizeAlertFilters,
+} from '@/lib/alert-match';
 import { signUnsubscribeToken } from '@/lib/alert-token';
 import { sendDigestEmail } from '@/lib/email';
 import { ALERT_SEND_HOUR } from '@/lib/validation';
 import { SITE_URL } from '@/lib/site-url';
 import type { Job } from '@/lib/types';
-import type mysql from 'mysql2/promise';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-// 48h: daily cadence + cron drift. Dedup bằng lastSentAt guard 23h nên không
-// gửi trùng jobs đã cover ở lần trước.
+// 48h covers the daily cadence plus scheduler drift for a newly created alert.
+// Existing alerts resume from their per-alert delivery cursor.
 const LOOKBACK_HOURS = 48;
 // Re-send guard: không gửi lại trong 23h.
 const DAILY_RESEND_GUARD_MS = 23 * 3600 * 1000;
@@ -80,18 +83,13 @@ function constantTimeEqual(a: string, b: string): boolean {
   return crypto.timingSafeEqual(ba, bb);
 }
 
-async function fetchRecentJobs(hours: number): Promise<Job[]> {
-  const db = getPool();
-  const [rows] = await db.execute<mysql.RowDataPacket[]>(
-    `SELECT id, title, company, url, location, salary, logo_url, source, category, experience, level, description, job_posted_date, created_at, posted_at
-     FROM job_listings
-     WHERE status = 'active'
-       AND created_at >= DATE_SUB(NOW(), INTERVAL ? HOUR)
-     ORDER BY created_at DESC
-     LIMIT 2000`,
-    [String(hours)],
-  );
-  return rows as unknown as Job[];
+async function fetchRecentJobs(cutoff: Date): Promise<Job[]> {
+  const rows = await prisma.rawJob.findMany({
+    where: { crawled_at: { gt: cutoff } },
+    orderBy: { crawled_at: 'asc' },
+    take: 10_000,
+  });
+  return rows.map(rawJobToJob);
 }
 
 export async function POST(req: NextRequest) {
@@ -144,7 +142,15 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const recentJobs = await fetchRecentJobs(LOOKBACK_HOURS);
+  const defaultCutoff = new Date(now.getTime() - LOOKBACK_HOURS * 3600 * 1000);
+  const earliestCutoff = dueAlerts.reduce(
+    (earliest, alert) =>
+      alert.lastDeliveredJobAt && alert.lastDeliveredJobAt < earliest
+        ? alert.lastDeliveredJobAt
+        : earliest,
+    defaultCutoff,
+  );
+  const recentJobs = await fetchRecentJobs(earliestCutoff);
 
   const summary: DigestRunSummary = {
     alertsProcessed: 0,
@@ -168,16 +174,34 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
+    const unsupportedFilters = findUnsupportedAlertFilters(alert.filters);
+    if (unsupportedFilters.length > 0) {
+      console.warn(
+        `[digest] skipping alert ${alert.id}: unsupported filters ${unsupportedFilters.join(', ')}`,
+      );
+      continue;
+    }
+
     const filters = sanitizeAlertFilters(alert.filters);
-    const cutoff =
-      alert.lastSentAt ??
-      new Date(now.getTime() - LOOKBACK_HOURS * 3600 * 1000);
+    const cutoff = alert.lastDeliveredJobAt ?? defaultCutoff;
     const matched = recentJobs
       .filter((j) => new Date(j.created_at) > cutoff)
       .filter((j) => jobMatchesFilters(j, filters))
       .slice(0, MAX_JOBS_PER_EMAIL);
 
-    if (matched.length === 0) continue;
+    if (matched.length === 0) {
+      const scannedForAlert = recentJobs.filter(
+        (job) => new Date(job.created_at) > cutoff,
+      );
+      const latestScanned = scannedForAlert.at(-1);
+      if (latestScanned?.created_at) {
+        await prisma.jobAlert.update({
+          where: { id: alert.id },
+          data: { lastDeliveredJobAt: new Date(latestScanned.created_at) },
+        });
+      }
+      continue;
+    }
     summary.alertsWithMatches += 1;
 
     const token = signUnsubscribeToken(alert.id);
@@ -194,10 +218,14 @@ export async function POST(req: NextRequest) {
         unsubscribePostUrl,
         manageUrl,
       });
+      const lastDeliveredJobAt = matched.reduce((latest, job) => {
+        const crawledAt = new Date(job.created_at);
+        return crawledAt > latest ? crawledAt : latest;
+      }, cutoff);
       await prisma.$transaction([
         prisma.jobAlert.update({
           where: { id: alert.id },
-          data: { lastSentAt: now },
+          data: { lastSentAt: now, lastDeliveredJobAt },
         }),
         prisma.jobAlertDelivery.create({
           data: {

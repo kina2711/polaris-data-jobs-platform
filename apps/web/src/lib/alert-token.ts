@@ -8,8 +8,8 @@ import crypto from 'crypto';
  *   - iat = epoch seconds (ký tại lúc ký token)
  *   - token hết hạn sau TOKEN_TTL_SECONDS server-side
  *
- * Secret: ALERT_TOKEN_SECRET (bắt buộc, KHÔNG fallback AUTH_SECRET để blast radius
- * không lan sang 3 service khác share AUTH_SECRET qua cookie .aquilalab.com).
+ * Secret: ALERT_TOKEN_SECRET (required, with no AUTH_SECRET fallback so a leak
+ * cannot compromise the main Polaris session-signing key).
  */
 
 const TOKEN_VERSION = 'v2';

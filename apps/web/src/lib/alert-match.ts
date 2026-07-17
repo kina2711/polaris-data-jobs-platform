@@ -1,5 +1,6 @@
 import type { Job } from './types';
 import { SALARY_VALUES } from './validation';
+import { parseSalary } from './job-jsonld';
 
 /**
  * Shape of the saved filter in JobAlert.filters. Mirror of the homepage
@@ -13,6 +14,23 @@ export interface AlertFilters {
   experience?: string;
   level?: string;
   salary?: (typeof SALARY_VALUES)[number];
+}
+
+const UNSUPPORTED_ALERT_FILTER_KEYS = [
+  'category',
+  'role',
+  'experience',
+  'level',
+] as const;
+
+export function findUnsupportedAlertFilters(raw: unknown): string[] {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return [];
+  const filters = raw as Record<string, unknown>;
+  return UNSUPPORTED_ALERT_FILTER_KEYS.filter((key) => {
+    if (!Object.hasOwn(filters, key)) return false;
+    const value = filters[key];
+    return typeof value === 'string' && value.trim() !== '' && value !== 'all';
+  });
 }
 
 export function sanitizeAlertFilters(raw: unknown): AlertFilters {
@@ -40,21 +58,6 @@ export function sanitizeAlertFilters(raw: unknown): AlertFilters {
   };
 }
 
-function parseSalaryToVndMillion(
-  salary: string | null,
-): { min: number; max: number; currency: 'VND' | 'USD' } | null {
-  if (!salary) return null;
-  const normalized = salary.replace(/\s+/g, '').toLowerCase();
-  const isUsd = normalized.includes('usd') || normalized.includes('$');
-  const numbers = (salary.match(/[0-9][0-9,]*/g) || []).map((s) =>
-    parseInt(s.replace(/,/g, ''), 10),
-  );
-  if (numbers.length === 0) return null;
-  const min = numbers[0];
-  const max = numbers[1] ?? numbers[0];
-  return { min, max, currency: isUsd ? 'USD' : 'VND' };
-}
-
 function matchSalary(
   jobSalary: string | null,
   filter: AlertFilters['salary'],
@@ -67,18 +70,20 @@ function matchSalary(
       /thỏa\s*thuận|tho\s*thu/i.test(jobSalary)
     );
   }
-  const parsed = parseSalaryToVndMillion(jobSalary);
+  const parsed = parseSalary(jobSalary);
   if (!parsed) return false;
+  const minimum = parsed.min ?? parsed.value ?? parsed.max;
+  if (minimum === undefined) return false;
   if (filter.startsWith('usd_')) {
     if (parsed.currency !== 'USD') return false;
-    const v = parsed.min;
+    const v = minimum;
     if (filter === 'usd_under1k') return v < 1000;
     if (filter === 'usd_1kto2k') return v >= 1000 && v <= 2000;
     if (filter === 'usd_over2k') return v > 2000;
     return false;
   }
   if (parsed.currency !== 'VND') return false;
-  const v = parsed.min;
+  const v = minimum / 1_000_000;
   if (filter === 'under10') return v < 10;
   if (filter === '10to20') return v >= 10 && v <= 20;
   if (filter === '20to30') return v >= 20 && v <= 30;
@@ -93,10 +98,31 @@ function matchLocation(
 ): boolean {
   if (!filter || filter === 'all') return true;
   if (!jobLocation) return false;
+  const normalize = (value: string) =>
+    value
+      .toLocaleLowerCase('vi-VN')
+      .replace(/[._-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const normalizedLocation = normalize(jobLocation);
+  const normalizedFilter = normalize(filter);
+  const aliases = {
+    hanoi: ['hà nội', 'ha noi'],
+    hochiminh: ['hồ chí minh', 'ho chi minh', 'hcm'],
+    danang: ['đà nẵng', 'da nang'],
+  };
+  const knownLocations = Object.values(aliases).flat();
   if (filter === 'other') {
-    return !['Hà Nội', 'TP.Hồ Chí Minh', 'Đà Nẵng'].includes(jobLocation);
+    return !knownLocations.some((location) =>
+      normalizedLocation.includes(location),
+    );
   }
-  return jobLocation === filter;
+  const matchedAliases = Object.values(aliases).find((values) =>
+    values.some((alias) => normalizedFilter.includes(alias)),
+  );
+  return (matchedAliases ?? [normalizedFilter]).some((location) =>
+    normalizedLocation.includes(location),
+  );
 }
 
 function matchKeyword(job: Job, keyword: string | undefined): boolean {

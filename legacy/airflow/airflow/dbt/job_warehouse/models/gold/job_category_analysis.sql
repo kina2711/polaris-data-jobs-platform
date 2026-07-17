@@ -10,8 +10,8 @@ SELECT
     COUNT(*) AS num_positions,
     COUNT(DISTINCT company_name) AS num_companies,
     COUNT(DISTINCT job_location) AS num_locations,
-    ROUND(100.0 * COUNT(*) / 
-        (SELECT COUNT(*) FROM {{ ref('fact_jobs') }}) * 100, 2) AS pct_of_all_jobs,
+    ROUND(100.0 * COUNT(*) /
+        (SELECT COUNT(*) FROM {{ ref('fact_jobs') }}), 2) AS pct_of_all_jobs,
     ROUND(AVG(salary_avg_million), 1) AS avg_salary,
     MIN(salary_min_million) AS min_salary,
     MAX(salary_max_million) AS max_salary,

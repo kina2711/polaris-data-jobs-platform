@@ -16,15 +16,24 @@ async function main() {
 
   console.log('Fetching raw jobs without embeddings...');
   // Fetch jobs that don't have embeddings yet
-  const jobs =
-    await prisma.$queryRaw`SELECT id, title, description, requirements FROM raw_jobs WHERE embedding IS NULL`;
+  const jobs = await prisma.$queryRaw`
+    SELECT id, title, description, requirements
+    FROM raw_jobs
+    WHERE embedding IS NULL
+    ORDER BY crawled_at ASC
+    LIMIT 500
+  `;
 
   if (jobs.length === 0) {
     console.log('No jobs found to vectorize.');
+    console.log('VECTORIZE_RESULT={"updated":0,"failed":0}');
     return;
   }
 
   console.log(`Found ${jobs.length} jobs to vectorize.`);
+
+  let updated = 0;
+  let failed = 0;
 
   for (let i = 0; i < jobs.length; i++) {
     const job = jobs[i];
@@ -47,18 +56,27 @@ async function main() {
       const vector = Array.from(output.data);
       const vectorStr = `[${vector.join(',')}]`;
 
-      await prisma.$executeRawUnsafe(
-        'UPDATE raw_jobs SET embedding = $1::vector WHERE id = $2',
-        vectorStr,
-        job.id,
-      );
+      await prisma.$executeRaw`
+        UPDATE raw_jobs
+        SET embedding = CAST(${vectorStr} AS vector)
+        WHERE id = ${job.id}
+      `;
+      updated += 1;
       console.log('Done.');
     } catch (err) {
+      failed += 1;
       console.error('Failed.', err);
     }
   }
 
-  console.log('Vectorization complete!');
+  const result = { updated, failed };
+  console.log(`VECTORIZE_RESULT=${JSON.stringify(result)}`);
+
+  if (failed > 0) {
+    throw new Error(
+      `Vectorization failed for ${failed} of ${jobs.length} jobs.`,
+    );
+  }
 }
 
 main()

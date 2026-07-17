@@ -15,8 +15,8 @@ export default async function NewAlertPage() {
         Tạo thông báo mới
       </h1>
       <p className="text-sm text-muted-foreground mb-6">
-        Chọn tần suất + khung giờ; chúng tôi gửi email tổng hợp việc mới khớp
-        tiêu chí.
+        Chọn tiêu chí; chúng tôi gửi email tổng hợp việc mới lúc 8h sáng hàng
+        ngày theo múi giờ của bạn.
       </p>
       <NewAlertForm />
     </div>

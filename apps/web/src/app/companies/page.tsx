@@ -9,7 +9,7 @@ import type { CompanyDirectoryEntry } from '@/lib/company';
 export const metadata: Metadata = {
   title: 'Công ty tuyển dụng Data & AI tại Việt Nam',
   description:
-    'Danh sách các công ty đang tuyển dụng vị trí Data, AI và Analytics tại Việt Nam. Xem việc làm theo từng công ty trên crawl_job_data_Pipeline.',
+    'Danh sách các công ty đang tuyển dụng vị trí Data, AI và Analytics tại Việt Nam. Xem việc làm theo từng công ty trên Polaris Data Jobs.',
   alternates: { canonical: '/companies' },
 };
 

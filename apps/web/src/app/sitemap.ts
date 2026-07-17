@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { fetchSitemapEntries, fetchCompanyDirectory } from '@/lib/api';
+import { SITE_URL } from '@/lib/site-url';
 
 // Only companies with at least this many active jobs are indexable (matches the
 // noindex threshold in companies/[slug]/page.tsx).
@@ -8,13 +9,13 @@ const COMPANY_SITEMAP_MIN_JOBS = 2;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     {
-      url: 'https://jobs.aquilalab.com',
+      url: SITE_URL,
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 1,
     },
     {
-      url: 'https://jobs.aquilalab.com/companies',
+      url: `${SITE_URL}/companies`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.7,
@@ -25,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const rows = await fetchSitemapEntries();
     for (const row of rows) {
       entries.push({
-        url: `https://jobs.aquilalab.com/jobs/${row.id}`,
+        url: `${SITE_URL}/jobs/${encodeURIComponent(row.id)}`,
         lastModified: row.lastMod,
         changeFrequency: 'daily',
         priority: 0.8,
@@ -40,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const c of companies) {
       if (c.jobCount < COMPANY_SITEMAP_MIN_JOBS) continue;
       entries.push({
-        url: `https://jobs.aquilalab.com/companies/${c.slug}`,
+        url: `${SITE_URL}/companies/${c.slug}`,
         lastModified: new Date(c.latest),
         changeFrequency: 'daily',
         priority: 0.6,

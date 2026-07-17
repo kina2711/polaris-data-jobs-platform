@@ -7,6 +7,21 @@ interface ParsedSalary {
   value?: number;
 }
 
+function parseLocalizedNumber(token: string): number | null {
+  const parts = token.split(/[.,]/);
+  let value: number;
+  if (parts.length === 1) {
+    value = Number(parts[0]);
+  } else if (parts.slice(1).every((part) => part.length === 3)) {
+    value = Number(parts.join(''));
+  } else if (parts.length === 2 && parts[1].length <= 2) {
+    value = Number(`${parts[0]}.${parts[1]}`);
+  } else {
+    value = Number(parts.join(''));
+  }
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
 // Salary crawl là free-text VN ("10 - 20 triệu", "Tới 30 triệu", "Từ 1,000 USD",
 // "Thoả thuận"...). Trả null khi không suy ra được số để BỎ baseSalary thay vì
 // bịa — chỉ "triệu" (VND) và "USD" mới parse, khớp đúng pattern trong api.ts.
@@ -18,12 +33,13 @@ export function parseSalary(
   if (!s) return null;
   const isUsd = /usd|\$/.test(s);
   const isVndMillions = /tri[eệ]u/.test(s);
-  if (!isUsd && !isVndMillions) return null;
+  const isVndAbsolute = /vnd|vnđ|đ[oồ]ng|\bdong\b|₫/.test(s);
+  if (!isUsd && !isVndMillions && !isVndAbsolute) return null;
   const nums = (s.match(/\d[\d.,]*/g) ?? [])
-    .map((n) => parseFloat(n.replace(/,/g, '')))
-    .filter((n) => Number.isFinite(n) && n > 0);
+    .map(parseLocalizedNumber)
+    .filter((n): n is number => n !== null);
   if (nums.length === 0) return null;
-  const mult = isVndMillions ? 1_000_000 : 1;
+  const mult = !isUsd && isVndMillions ? 1_000_000 : 1;
   const scaled = nums.map((n) => Math.round(n * mult));
   const currency = isUsd ? 'USD' : 'VND';
   if (scaled.length >= 2) {

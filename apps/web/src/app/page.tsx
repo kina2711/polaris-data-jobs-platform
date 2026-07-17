@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { JobCard } from '@/components/job-card';
 import { Job } from '@/lib/types';
 import { Search, MapPin, Briefcase } from 'lucide-react';
@@ -11,20 +11,37 @@ export default function Home() {
   const [location, setLocation] = useState('all');
   const [source, setSource] = useState('all');
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const requestSequence = useRef(0);
 
   // Thêm state để mở/đóng tab AI Match
   const [showAiMatch, setShowAiMatch] = useState(false);
 
   useEffect(() => {
     fetchJobs(1, true);
+    // Initial load intentionally uses the default filters once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchJobs = async (pageNumber: number, isInitial: boolean = false) => {
+  type FilterOverrides = Partial<{
+    cvText: string;
+    keyword: string;
+    location: string;
+    source: string;
+    showAiMatch: boolean;
+  }>;
+
+  const fetchJobs = async (
+    pageNumber: number,
+    isInitial: boolean = false,
+    overrides: FilterOverrides = {},
+  ) => {
+    const requestId = ++requestSequence.current;
     if (isInitial) setLoading(true);
     else setLoadingMore(true);
 
@@ -35,10 +52,13 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cvText,
-          keyword,
-          location,
-          source,
+          cvText:
+            (overrides.showAiMatch ?? showAiMatch)
+              ? (overrides.cvText ?? cvText)
+              : '',
+          keyword: overrides.keyword ?? keyword,
+          location: overrides.location ?? location,
+          source: overrides.source ?? source,
           page: pageNumber,
         }),
       });
@@ -49,11 +69,11 @@ export default function Home() {
         throw new Error(data.error || 'Có lỗi xảy ra');
       }
 
-      if (data.jobs.length < 20) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
+      if (requestId !== requestSequence.current) return;
+
+      const responseTotal = Number(data.total ?? data.jobs.length);
+      setTotal(responseTotal);
+      setHasMore(pageNumber * Number(data.limit ?? 20) < responseTotal);
 
       if (pageNumber === 1) {
         setJobs(data.jobs);
@@ -61,11 +81,14 @@ export default function Home() {
         setJobs((prev) => [...prev, ...data.jobs]);
       }
       setPage(pageNumber);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (requestId !== requestSequence.current) return;
+      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      if (requestId === requestSequence.current) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   };
 
@@ -75,6 +98,7 @@ export default function Home() {
   };
 
   const loadMore = () => {
+    if (loadingMore || !hasMore) return;
     fetchJobs(page + 1, false);
   };
 
@@ -91,8 +115,8 @@ export default function Home() {
             Chóng
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Hệ thống thu thập dữ liệu việc làm, ứng dụng AI
-            phân tích CV của bạn để tìm ra công việc phù hợp nhất.
+            Hệ thống thu thập dữ liệu việc làm, ứng dụng AI phân tích CV của bạn
+            để tìm ra công việc phù hợp nhất.
           </p>
           <p className="text-sm font-medium text-muted-foreground/80 pt-2">
             Phát triển bởi:{' '}
@@ -207,8 +231,8 @@ export default function Home() {
             {!loading && (
               <span className="text-sm text-muted-foreground font-medium">
                 Tìm thấy{' '}
-                <span className="text-foreground font-bold">{jobs.length}</span>{' '}
-                việc làm
+                <span className="text-foreground font-bold">{total}</span> việc
+                làm
               </span>
             )}
           </div>
@@ -228,7 +252,14 @@ export default function Home() {
                   setLocation('all');
                   setSource('all');
                   setCvText('');
-                  fetchJobs(1, true);
+                  setShowAiMatch(false);
+                  fetchJobs(1, true, {
+                    keyword: '',
+                    location: 'all',
+                    source: 'all',
+                    cvText: '',
+                    showAiMatch: false,
+                  });
                 }}
                 className="mt-4 px-4 py-2 text-sm text-primary font-medium hover:underline"
               >
