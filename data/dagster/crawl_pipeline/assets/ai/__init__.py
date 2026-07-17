@@ -1,1 +1,1 @@
-from . import vectorize_assets
+from . import vectorize_assets as vectorize_assets

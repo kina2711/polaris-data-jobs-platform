@@ -1,10 +1,12 @@
-from dagster import AssetExecutionContext, MaterializeResult, asset
-import requests
-import os
 import json
+import os
+
+import requests
+from dagster import AssetExecutionContext, AssetKey, Failure, MaterializeResult, asset
+
 
 @asset(
-    deps=["vectorize_jobs"],
+    deps=[AssetKey(["ai", "vectorize_jobs"])],
     key_prefix=["notification"],
     name="discord_notification",
     group_name="notifications",
@@ -27,10 +29,10 @@ def discord_notification(context: AssetExecutionContext):
             webhook_url,
             data=json.dumps({"embeds": [embed]}),
             headers={"Content-Type": "application/json"},
+            timeout=15,
         )
         response.raise_for_status()
         context.log.info("Discord notification sent.")
         return MaterializeResult(metadata={"status": "sent"})
     except Exception as e:
-        context.log.error(f"Failed to send Discord notification: {e}")
-        return MaterializeResult(metadata={"error": str(e)})
+        raise Failure(f"Failed to send Discord notification: {e}") from e

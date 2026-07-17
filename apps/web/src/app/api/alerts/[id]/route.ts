@@ -41,6 +41,10 @@ export async function PATCH(
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return NextResponse.json({ error: 'invalid_body' }, { status: 400 });
+  }
+
   const update: {
     active?: boolean;
     name?: string;

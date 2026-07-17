@@ -1,16 +1,17 @@
 export interface Job {
-  id: number;
+  id: string;
   title: string;
   company: string;
   url: string;
   location: string | null;
   salary: string | null;
   logo_url: string | null;
-  source: 'topcv' | 'linkedin' | 'vieclam24h';
+  source: string;
   category: string | null;
   experience: string | null;
   level: string | null;
   description: string | null;
+  requirements?: string | null;
   job_posted_date: string | null;
   posted_to_discord: number;
   created_at: string;
@@ -32,4 +33,4 @@ export interface Stats {
   companies: number;
 }
 
-export type JobSource = 'topcv' | 'linkedin' | 'vieclam24h' | 'all';
+export type JobSource = 'topcv' | 'linkedin' | 'itviec' | 'all';

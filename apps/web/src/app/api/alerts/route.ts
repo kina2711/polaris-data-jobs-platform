@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { sanitizeAlertFilters } from '@/lib/alert-match';
+import {
+  findUnsupportedAlertFilters,
+  sanitizeAlertFilters,
+} from '@/lib/alert-match';
 import { ALERT_SEND_HOUR, pickTimezone } from '@/lib/validation';
 import { isSameOriginWrite } from '@/lib/origin-check';
 
@@ -55,6 +58,13 @@ export async function POST(req: NextRequest) {
     .replace(/[\r\n\t]+/g, ' ');
   if (!cleanName) {
     return NextResponse.json({ error: 'invalid_name' }, { status: 400 });
+  }
+  const unsupportedFilters = findUnsupportedAlertFilters(filters);
+  if (unsupportedFilters.length > 0) {
+    return NextResponse.json(
+      { error: 'unsupported_filters', fields: unsupportedFilters },
+      { status: 400 },
+    );
   }
   const clean = sanitizeAlertFilters(filters);
   if (Object.values(clean).every((v) => !v)) {

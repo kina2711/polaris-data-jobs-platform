@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import type { Job } from './types';
 import { SITE_URL } from './site-url';
-const FROM = process.env.SMTP_FROM || 'Job Pipeline <noreply@localhost>';
+const FROM = process.env.SMTP_FROM || 'Polaris Jobs <noreply@localhost>';
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -103,7 +103,7 @@ function formatRelativeVi(raw: string | null): string {
 const SOURCE_LABELS: Record<string, string> = {
   topcv: 'TopCV',
   linkedin: 'LinkedIn',
-  vieclam24h: 'Vieclam24h',
+  itviec: 'ITViec',
 };
 
 function renderSourceBadge(source: string): string {
@@ -118,7 +118,7 @@ function renderJobRow(job: Job): string {
   const location = job.location ? escapeHtml(job.location) : '';
   const posted = formatRelativeVi(job.job_posted_date || job.created_at);
   const metaParts = [salary, location, posted].filter(Boolean).join(' · ');
-  const link = `${SITE_URL}/jobs/${job.id}`;
+  const link = `${SITE_URL}/jobs/${encodeURIComponent(job.id)}`;
   const logoCell = renderLogoCell(job);
   const badge = job.source ? renderSourceBadge(job.source) : '';
   return `
@@ -154,14 +154,14 @@ export async function sendDigestEmail(
     input;
   if (jobs.length === 0) return null;
 
-  const subject = `[Job Pipeline] ${jobs.length} việc làm mới cho "${alertName}"`;
+  const subject = `[Polaris Jobs] ${jobs.length} việc làm mới cho "${alertName}"`;
   const rows = jobs.map(renderJobRow).join('');
   const safeName = escapeHtml(alertName);
 
   const html = `
     <div style="font-family: 'Segoe UI', -apple-system, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #fff;">
       <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="color: #0f172a; font-size: 20px; margin: 0;">Job Pipeline</h2>
+        <h2 style="color: #0f172a; font-size: 20px; margin: 0;">Polaris Jobs</h2>
         <p style="color: #64748b; font-size: 12px; margin: 4px 0 0;">Việc làm Data tại Việt Nam</p>
       </div>
       <h3 style="color: #0f172a; font-size: 16px; margin: 0 0 4px;">${jobs.length} việc làm mới</h3>
@@ -188,7 +188,7 @@ export async function sendDigestEmail(
       const meta = [j.salary || 'Thỏa thuận', j.location, posted]
         .filter(Boolean)
         .join(' · ');
-      return `- ${j.title}${j.company ? ` — ${j.company}` : ''} [${src}]\n  ${meta}\n  ${SITE_URL}/jobs/${j.id}`;
+      return `- ${j.title}${j.company ? ` — ${j.company}` : ''} [${src}]\n  ${meta}\n  ${SITE_URL}/jobs/${encodeURIComponent(j.id)}`;
     }),
     '',
     `Quản lý thông báo: ${manageUrl}`,

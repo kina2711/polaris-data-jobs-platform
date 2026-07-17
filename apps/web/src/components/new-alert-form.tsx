@@ -3,31 +3,12 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition, type FormEvent } from 'react';
 
-const CATEGORIES = [
-  { value: '', label: 'Không giới hạn' },
-  { value: 'data-analyst', label: 'Data Analyst' },
-  { value: 'business-analyst', label: 'Business Analyst' },
-  { value: 'data-engineer', label: 'Data Engineer' },
-  { value: 'data-scientist', label: 'Data Scientist' },
-  { value: 'ai-engineer', label: 'AI Engineer' },
-  { value: 'machine-learning-engineer', label: 'ML Engineer' },
-];
-
 const LOCATIONS = [
   { value: '', label: 'Không giới hạn' },
-  { value: 'Hà Nội', label: 'Hà Nội' },
-  { value: 'TP.Hồ Chí Minh', label: 'TP.HCM' },
-  { value: 'Đà Nẵng', label: 'Đà Nẵng' },
+  { value: 'hà nội', label: 'Hà Nội' },
+  { value: 'hồ chí minh', label: 'TP.HCM' },
+  { value: 'đà nẵng', label: 'Đà Nẵng' },
   { value: 'other', label: 'Tỉnh khác' },
-];
-
-const LEVELS = [
-  { value: '', label: 'Không giới hạn' },
-  { value: 'Intern', label: 'Intern' },
-  { value: 'Junior', label: 'Junior' },
-  { value: 'Mid', label: 'Mid' },
-  { value: 'Senior', label: 'Senior' },
-  { value: 'Lead', label: 'Lead' },
 ];
 
 const SALARIES = [
@@ -49,9 +30,7 @@ export function NewAlertForm() {
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
-  const [level, setLevel] = useState('');
   const [salary, setSalary] = useState('');
   const [keyword, setKeyword] = useState('');
 
@@ -74,9 +53,7 @@ export function NewAlertForm() {
       return;
     }
     const filters = {
-      category: category || undefined,
       location: location || undefined,
-      level: level || undefined,
       salary: salary || undefined,
       keyword: keyword.trim() || undefined,
     };
@@ -135,26 +112,6 @@ export function NewAlertForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label
-            htmlFor="alert-category"
-            className="block text-sm font-medium mb-1.5"
-          >
-            Vị trí
-          </label>
-          <select
-            id="alert-category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className={field}
-          >
-            {CATEGORIES.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label
             htmlFor="alert-location"
             className="block text-sm font-medium mb-1.5"
           >
@@ -167,26 +124,6 @@ export function NewAlertForm() {
             className={field}
           >
             {LOCATIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label
-            htmlFor="alert-level"
-            className="block text-sm font-medium mb-1.5"
-          >
-            Cấp bậc
-          </label>
-          <select
-            id="alert-level"
-            value={level}
-            onChange={(e) => setLevel(e.target.value)}
-            className={field}
-          >
-            {LEVELS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>

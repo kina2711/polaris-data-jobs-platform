@@ -1,6 +1,7 @@
 import logging
 import os
 import traceback
+from contextlib import suppress
 from datetime import datetime
 from typing import Any
 
@@ -11,9 +12,10 @@ class AuditLogger:
     """Utility class for logging audit data to audit.master_job_elt_audit table"""
 
     def __init__(self):
-        from scripts.utils.db_conn import DBConnection
         from sqlalchemy import text
         from sqlalchemy.exc import SQLAlchemyError
+
+        from scripts.utils.db_conn import DBConnection
 
         self.text = text
         self.SQLAlchemyError = SQLAlchemyError
@@ -171,12 +173,10 @@ class AuditLogger:
             # Get log URL (Airflow task log URL)
             log_url = None
             if dag_run and task_instance:
-                try:
+                with suppress(Exception):
                     log_url = dag_run.get_task_instance(
                         context["task_instance"].task_id
                     ).log_url
-                except:
-                    pass
 
             # Get executor
             executor = "LocalExecutor"
@@ -227,7 +227,7 @@ class AuditLogger:
                     :discord_posts_sent, :discord_posts_failed, :discord_channel_id,
                     :executor, :operator, CURRENT_TIMESTAMP
                 )
-                ON CONFLICT (dag_run_id, task_id, execution_date) 
+                ON CONFLICT (dag_run_id, task_id, execution_date)
                 DO UPDATE SET
                     task_status = EXCLUDED.task_status,
                     task_end_date = EXCLUDED.task_end_date,

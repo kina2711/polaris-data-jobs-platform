@@ -9,6 +9,6 @@ export default async function Image() {
   return renderOgCard({
     title: 'Việc làm Data tại Việt Nam',
     subtitle:
-      'Tổng hợp Data Analyst, Data Engineer, AI/ML từ TopCV, LinkedIn, Vieclam24h — cập nhật liên tục.',
+      'Tổng hợp Data Analyst, Data Engineer, AI/ML từ TopCV, LinkedIn, ITViec — cập nhật liên tục.',
   });
 }

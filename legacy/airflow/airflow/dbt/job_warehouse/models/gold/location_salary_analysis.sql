@@ -10,8 +10,8 @@ SELECT
     l.total_jobs,
     l.num_companies,
     l.num_platforms,
-    ROUND(100.0 * l.total_jobs / 
-        (SELECT COUNT(*) FROM {{ ref('fact_jobs') }}) * 100, 2) AS pct_of_total_jobs,
+    ROUND(100.0 * l.total_jobs /
+        (SELECT COUNT(*) FROM {{ ref('fact_jobs') }}), 2) AS pct_of_total_jobs,
     l.avg_salary_by_location,
     l.highest_salary,
     l.lowest_salary,

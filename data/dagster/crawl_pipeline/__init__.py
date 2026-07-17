@@ -9,7 +9,9 @@ from .resources.postgres_resource import PostgresResource
 
 all_assets = load_assets_from_package_module(assets)
 
-dbt_project_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dbt_project")
+dbt_project_dir = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "dbt_project"
+)
 
 defs = Definitions(
     assets=all_assets,

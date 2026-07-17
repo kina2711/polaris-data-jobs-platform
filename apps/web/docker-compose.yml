@@ -1,14 +1,14 @@
 services:
   app:
     build: .
-    container_name: ${APP_NAME}
+    container_name: ${APP_NAME:-polaris_web}
     restart: unless-stopped
     env_file: .env
     environment:
-      - PORT=${APP_PORT}
+      - PORT=3400
       - TZ=Asia/Ho_Chi_Minh
     ports:
-      - '${APP_PORT}:${APP_PORT}'
+      - '${APP_PORT:-3400}:3400'
     mem_limit: 512m
     memswap_limit: 512m
     cpus: 1.0
@@ -16,10 +16,9 @@ services:
       test:
         [
           'CMD',
-          'wget',
-          '--spider',
-          '-q',
-          'http://localhost:${APP_PORT}/api/health',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3400/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
         ]
       interval: 30s
       timeout: 5s

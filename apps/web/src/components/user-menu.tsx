@@ -19,13 +19,14 @@ interface SessionInfo {
   image?: string | null;
 }
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://jobs.aquilalab.com';
-const LOGIN_BASE = 'https://login.aquilalab.com/login';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3400';
+const LOGIN_BASE = process.env.NEXT_PUBLIC_LOGIN_URL ?? '/api/auth/signin';
 
 function buildLoginUrl(callbackPath: string): string {
   const callback = new URL(callbackPath, SITE_URL).toString();
-  return `${LOGIN_BASE}?callbackUrl=${encodeURIComponent(callback)}`;
+  const loginUrl = new URL(LOGIN_BASE, SITE_URL);
+  loginUrl.searchParams.set('callbackUrl', callback);
+  return loginUrl.toString();
 }
 
 export function UserMenu() {
@@ -80,7 +81,7 @@ export function UserMenu() {
     if (signingOut) return;
     setSigningOut(true);
     try {
-      // Revoke refresh token + clear cookie .aquilalab.com qua central
+      // Revoke an optional Polaris central-auth session before local sign-out.
       await centralLogout();
       await signOut({ callbackUrl: '/' });
     } catch {

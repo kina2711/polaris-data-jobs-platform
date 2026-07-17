@@ -28,10 +28,7 @@ export async function generateMetadata({
   params,
 }: JobDetailPageProps): Promise<Metadata> {
   const { id } = await params;
-  const jobId = parseInt(id, 10);
-  if (isNaN(jobId)) return {};
-
-  const job = await fetchJobById(jobId);
+  const job = await fetchJobById(id);
   if (!job) return {};
 
   const titleLine = job.company ? `${job.title} — ${job.company}` : job.title;
@@ -46,7 +43,7 @@ export async function generateMetadata({
   }
   const description =
     descParts.filter(Boolean).join(' · ').slice(0, 200) ||
-    `Việc làm ${job.title} tại ${job.company ?? 'công ty'} — crawl_job_data_Pipeline`;
+    `Việc làm ${job.title} tại ${job.company ?? 'công ty'} — Polaris Data Jobs`;
 
   return {
     title: titleLine,
@@ -81,10 +78,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   }
 
   const { id } = await params;
-  const jobId = parseInt(id, 10);
-  if (isNaN(jobId)) notFound();
-
-  const job = await fetchJobById(jobId);
+  const job = await fetchJobById(id);
   if (!job) notFound();
 
   const sourceLabel = getSourceLabel(job.source);

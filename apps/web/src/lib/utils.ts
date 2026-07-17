@@ -59,6 +59,8 @@ export function getSourceLabel(source: string): string {
       return 'TopCV';
     case 'linkedin':
       return 'LinkedIn';
+    case 'itviec':
+      return 'ITViec';
     case 'vieclam24h':
       return 'Việc Làm 24h';
     default:
@@ -72,6 +74,7 @@ export function getSourceColor(source: string): string {
       return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400';
     case 'linkedin':
       return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+    case 'itviec':
     case 'vieclam24h':
       return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
     default:
@@ -85,6 +88,7 @@ export function getSourceDotColor(source: string): string {
       return 'bg-[#00A651]';
     case 'linkedin':
       return 'bg-[#0A66C2]';
+    case 'itviec':
     case 'vieclam24h':
       return 'bg-[#E74C3C]';
     default:

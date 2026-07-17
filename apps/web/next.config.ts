@@ -26,10 +26,8 @@ const IMG_HOSTS = [
   'https://*.licdn.com',
   'https://media.licdn.com',
   'https://static.licdn.com',
-  'https://*.vieclam24h.vn',
-  'https://vieclam24h.vn',
-  'https://123job.vn',
-  'https://*.123job.vn',
+  'https://itviec.com',
+  'https://*.itviec.com',
   'https://*.googleusercontent.com',
 ];
 
@@ -51,7 +49,7 @@ const CSP = [
 ].join('; ');
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['mysql2', '@xenova/transformers'],
+  serverExternalPackages: ['@xenova/transformers'],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.topcv.vn' },
@@ -59,10 +57,8 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'media.licdn.com' },
       { protocol: 'https', hostname: 'static.licdn.com' },
       { protocol: 'https', hostname: '*.licdn.com' },
-      { protocol: 'https', hostname: '*.vieclam24h.vn' },
-      { protocol: 'https', hostname: 'vieclam24h.vn' },
-      { protocol: 'https', hostname: '123job.vn' },
-      { protocol: 'https', hostname: '*.123job.vn' },
+      { protocol: 'https', hostname: 'itviec.com' },
+      { protocol: 'https', hostname: '*.itviec.com' },
     ],
   },
   async headers() {

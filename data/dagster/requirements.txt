@@ -1,0 +1,16 @@
+dagster>=1.9,<2
+dagster-dbt>=0.25,<1
+dagster-docker>=0.25,<1
+dagster-graphql>=1.9,<2
+dagster-postgres>=0.25,<1
+dagster-webserver>=1.9,<2
+beautifulsoup4>=4.12,<5
+boto3>=1.35,<2
+curl-cffi>=0.7,<1
+dbt-core==1.11.11
+dbt-postgres==1.10.0
+minio>=7.2,<8
+pandas>=2.2,<3
+psycopg2-binary>=2.9,<3
+requests>=2.32,<3
+sqlalchemy>=2.0,<3

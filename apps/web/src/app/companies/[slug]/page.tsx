@@ -46,7 +46,7 @@ export async function generateMetadata({
   if (!detail) return {};
 
   const title = `Việc làm tại ${detail.company} (${detail.jobCount} vị trí)`;
-  const description = `${detail.jobCount} việc làm Data, AI & Analytics đang tuyển tại ${detail.company}. Xem chi tiết và ứng tuyển trên crawl_job_data_Pipeline.`;
+  const description = `${detail.jobCount} việc làm Data, AI & Analytics đang tuyển tại ${detail.company}. Xem chi tiết và ứng tuyển trên Polaris Data Jobs.`;
 
   return {
     title,

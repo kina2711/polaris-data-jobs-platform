@@ -1,6 +1,6 @@
 import asyncio
+import contextlib
 import logging
-from typing import Any
 
 from sqlalchemy import text
 
@@ -49,7 +49,7 @@ def mark_jobs_as_posted(table_name: str, job_urls: list):
 
 async def send_jobs(
     jobs: list[dict], token: str, channel_id: int, throttle: float = 0.5
-) -> Any:
+) -> tuple[list[str], int]:
     """Send embeds to Discord. Import `discord` lazily so module import doesn't fail during DAG parsing."""
     try:
         import discord
@@ -57,7 +57,7 @@ async def send_jobs(
         logger.exception(
             "discord package is not installed — cannot send messages. Install 'discord.py' in the worker environment."
         )
-        return
+        raise
 
     intents = discord.Intents.none()
     client = discord.Client(intents=intents)
@@ -67,13 +67,11 @@ async def send_jobs(
         channel = await client.fetch_channel(channel_id)
     except Exception as e:
         logger.exception("Failed to connect or fetch channel: %s", e)
-        try:
+        with contextlib.suppress(Exception):
             await client.close()
-        except Exception:
-            pass
-        return
+        raise
 
-    success_job_send = 0
+    successful_urls: list[str] = []
     fail_job_send = 0
     try:
         for job in jobs:
@@ -81,7 +79,7 @@ async def send_jobs(
                 embed = job_to_embed(job)
                 await channel.send(embed=embed)
                 logger.info(f"Succeeded to send job: {job}")
-                success_job_send += 1
+                successful_urls.append(job["url"])
                 if throttle and throttle > 0:
                     await asyncio.sleep(throttle)
             except Exception:
@@ -93,17 +91,14 @@ async def send_jobs(
         except Exception:
             logger.exception("Error closing Discord client")
 
-    return success_job_send, fail_job_send
+    return successful_urls, fail_job_send
 
 
 def send_job_alerts(jobs, token: str, channel_id: int):
     if not jobs:
         logger.info("No jobs to send")
-        return
+        return [], 0
 
     job_sent_status = asyncio.run(send_jobs(jobs, token, channel_id))
 
-    total_job_success_sent = job_sent_status[0]
-    total_job_fail_sent = job_sent_status[1]
-
-    return total_job_success_sent, total_job_fail_sent
+    return job_sent_status

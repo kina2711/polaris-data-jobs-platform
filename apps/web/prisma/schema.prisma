@@ -1,12 +1,6 @@
-// Schema cho aquila_lab. Tổ chức:
-//   - `User` = MIRROR read-only từ academy (academy own migrations User).
-//   - `JobAlert` + `JobAlertDelivery` = OWNED bởi repo này từ 2026-04-22.
-//     Migrations mới cho 2 model này đi qua `prisma/migrations/` của repo này;
-//     academy giữ model tương đương ở schema để có Prisma Client nhưng KHÔNG
-//     tạo migration mới cho JobAlert/JobAlertDelivery.
-// Shared DB giữa 4 service (academy/admin/jobs/dataset) → `_prisma_migrations`
-// chung; mỗi repo chỉ manage migrations của riêng mình, Prisma skip phần không
-// biết (không phải "pending").
+// Canonical PostgreSQL schema for Polaris jobs. `raw_jobs`, alerts and delivery
+// state are managed by this repository. User rows may be synchronized by the
+// configured Polaris identity service; this app treats them as read-only.
 
 generator client {
   provider        = "prisma-client-js"
@@ -20,8 +14,8 @@ datasource db {
   extensions = [vector]
 }
 
-// Read-only reference — jobs app reads email/name for digests but never
-// inserts/updates users. CRUD happens in academy.
+// Read-only reference — the jobs app reads email/name for digests but never
+// inserts or updates users. Provisioning belongs to the approved Polaris IdP.
 model User {
   id            String     @id
   name          String?
@@ -48,6 +42,7 @@ model JobAlert {
   timezone   String             @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
   active     Boolean            @default(true)
   lastSentAt DateTime?
+  lastDeliveredJobAt DateTime?
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
   user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -85,5 +80,8 @@ model RawJob {
   crawled_at   DateTime?
   embedding    Unsupported("vector(384)")?
 
+  @@index([crawled_at(sort: Desc)])
+  @@index([company])
+  @@index([source])
   @@map("raw_jobs")
 }

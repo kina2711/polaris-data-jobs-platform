@@ -12,7 +12,7 @@ SELECT
     c.num_locations,
     c.discord_postings,
     c.pct_discord_posted,
-    DATE_DIFF('day', CURRENT_DATE, c.first_posting_date) + 1 AS active_days_range,
+    DATE_DIFF('day', c.first_posting_date, CURRENT_DATE) + 1 AS active_days_range,
     c.first_posting_date,
     c.last_posting_date,
     c.avg_salary_offered,

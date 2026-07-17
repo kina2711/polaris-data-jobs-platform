@@ -1,13 +1,15 @@
-// Helper gọi central auth cross-origin từ client component.
-// Trả null nếu network fail — caller swallow để không block logout/UX khi
-// endpoint tạm thời unreachable.
-
-export const LOGIN_ORIGIN =
-  process.env.NEXT_PUBLIC_LOGIN_URL || 'http://localhost:3400';
+// Optional bridge to a separately deployed Polaris identity service.
+// Authentication is intentionally not assumed when the origin is unconfigured.
+export const AUTH_ORIGIN = process.env.NEXT_PUBLIC_AUTH_ORIGIN?.replace(
+  /\/$/,
+  '',
+);
 
 export async function callCentral(path: string): Promise<Response | null> {
+  if (!AUTH_ORIGIN) return null;
+
   try {
-    return await fetch(`${LOGIN_ORIGIN}${path}`, {
+    return await fetch(`${AUTH_ORIGIN}${path}`, {
       method: 'POST',
       credentials: 'include',
     });
@@ -16,8 +18,6 @@ export async function callCentral(path: string): Promise<Response | null> {
   }
 }
 
-// Revoke refresh token + clear cookie qua central trước khi
-// NextAuth signOut.
 export async function centralLogout(): Promise<void> {
   await callCentral('/api/auth/logout');
 }

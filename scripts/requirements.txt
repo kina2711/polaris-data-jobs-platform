@@ -1,0 +1,6 @@
+beautifulsoup4>=4.12,<5
+curl-cffi>=0.7,<1
+psycopg2-binary>=2.9,<3
+requests>=2.32,<3
+sentence-transformers>=3,<6
+SQLAlchemy>=2.0,<3

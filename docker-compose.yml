@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # -------------------------
   # 1. DATABASE (GOLD LAYER)
@@ -16,8 +14,9 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d crawl_jobs_db']
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -74,11 +73,15 @@ services:
     environment:
       DAGSTER_POSTGRES_USER: ${DB_USER:-postgres}
       DAGSTER_POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      DAGSTER_POSTGRES_DB: ${DB_NAME:-crawl_jobs_db}
+      DAGSTER_POSTGRES_DB: ${DAGSTER_DB_NAME:-polaris_dagster}
       DAGSTER_PG_HOST: postgresql_db
       DAGSTER_HOME: /opt/dagster/app
-    volumes:
-      - ./data/dagster:/opt/dagster/app
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_USER:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-password}
+      VECTORIZER_API_URL: http://web:3400/api/vectorize
+      INTERNAL_VECTORIZER_TOKEN: ${INTERNAL_VECTORIZER_TOKEN:-}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
     depends_on:
       - postgresql_db
 
@@ -92,17 +95,29 @@ services:
     environment:
       DAGSTER_POSTGRES_USER: ${DB_USER:-postgres}
       DAGSTER_POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      DAGSTER_POSTGRES_DB: ${DB_NAME:-crawl_jobs_db}
+      DAGSTER_POSTGRES_DB: ${DAGSTER_DB_NAME:-polaris_dagster}
       DAGSTER_PG_HOST: postgresql_db
       DAGSTER_HOME: /opt/dagster/app
-    volumes:
-      - ./data/dagster:/opt/dagster/app
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_USER:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-password}
+      VECTORIZER_API_URL: http://web:3400/api/vectorize
+      INTERNAL_VECTORIZER_TOKEN: ${INTERNAL_VECTORIZER_TOKEN:-}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
     depends_on:
       - postgresql_db
 
   # -------------------------
   # 5. SEMANTIC LAYER (CUBE)
   # -------------------------
+  cubestore:
+    image: cubejs/cubestore:latest
+    container_name: cubestore
+    environment:
+      CUBESTORE_REMOTE_DIR: /cube/data
+    volumes:
+      - cube_store:/cube/data
+
   cubejs:
     image: cubejs/cube:latest
     container_name: cubejs
@@ -116,12 +131,15 @@ services:
       CUBEJS_DB_USER: ${DB_USER:-postgres}
       CUBEJS_DB_PASS: ${DB_PASSWORD:-postgres}
       CUBEJS_API_SECRET: ${CUBEJS_API_SECRET:-my-secret-key}
-      CUBEJS_DEV_MODE: 'true'
+      CUBEJS_DEV_MODE: ${CUBEJS_DEV_MODE:-false}
+      CUBEJS_CUBESTORE_HOST: cubestore
     volumes:
       - ./data/semantic:/cube/conf
     depends_on:
       postgresql_db:
         condition: service_healthy
+      cubestore:
+        condition: service_started
 
   # -------------------------
   # 6. BI & ANALYTICS
@@ -133,7 +151,7 @@ services:
       - '3001:3000'
     environment:
       MB_DB_TYPE: postgres
-      MB_DB_DBNAME: ${DB_NAME:-crawl_jobs_db}
+      MB_DB_DBNAME: ${METABASE_DB_NAME:-polaris_metabase}
       MB_DB_PORT: 5432
       MB_DB_USER: ${DB_USER:-postgres}
       MB_DB_PASS: ${DB_PASSWORD:-postgres}
@@ -150,12 +168,27 @@ services:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
-    container_name: crawl_web
+    container_name: polaris_web
     ports:
       - '3400:3400'
     environment:
       DATABASE_URL: 'postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgresql_db:5432/${DB_NAME:-crawl_jobs_db}'
       REDIS_URL: 'redis://redis:6379/1'
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3400}
+      NEXT_PUBLIC_LOGIN_URL: ${NEXT_PUBLIC_LOGIN_URL:-}
+      NEXT_PUBLIC_AUTH_ORIGIN: ${NEXT_PUBLIC_AUTH_ORIGIN:-}
+      AUTH_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3400}
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      DB_NAME: ${DB_NAME:-crawl_jobs_db}
+      INTERNAL_DIGEST_TOKEN: ${INTERNAL_DIGEST_TOKEN:-}
+      INTERNAL_VECTORIZER_TOKEN: ${INTERNAL_VECTORIZER_TOKEN:-}
+      ALERT_TOKEN_SECRET: ${ALERT_TOKEN_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-Polaris Jobs <noreply@localhost>}
     depends_on:
       postgresql_db:
         condition: service_healthy
@@ -165,3 +198,4 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  cube_store:
